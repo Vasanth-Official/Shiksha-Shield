@@ -1,0 +1,10 @@
+node_modules/
+dist/
+build/
+.env
+.vite/
+backend/venv/
+backend/__pycache__/
+*.pkl
+*.db
+.DS_Store
