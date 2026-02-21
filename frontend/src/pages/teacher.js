@@ -196,7 +196,9 @@ async function renderStudentTable(content, user) {
               </tr>
             </thead>
             <tbody id="studentTableBody">
-              ${renderStudentRows(students)}
+              ${students.length === 0 ?
+        '<tr><td colspan="9" class="py-20 text-center text-slate-400">No students found for this school.</td></tr>' :
+        renderStudentRows(students)}
             </tbody>
           </table>
         </div>
@@ -223,8 +225,12 @@ async function renderStudentTable(content, user) {
         return matchSearch && matchRisk;
       });
 
-      tbody.innerHTML = renderStudentRows(filteredStudents);
-      attachRowActions(filteredStudents);
+      if (filteredStudents.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="9" class="py-20 text-center"><div class="flex flex-col items-center justify-center text-slate-400 gap-2"><span class="text-3xl">📭</span><p class="font-medium">No students found matching your criteria.</p><p class="text-xs">Try adjusting your search or filters.</p></div></td></tr>';
+      } else {
+        tbody.innerHTML = renderStudentRows(filteredStudents);
+        attachRowActions(filteredStudents);
+      }
     }
 
     document.getElementById('searchInput')?.addEventListener('input', applyFilters);
