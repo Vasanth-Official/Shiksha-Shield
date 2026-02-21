@@ -34,7 +34,7 @@ export function createDashboardLayout(container, { role, sidebarItems, activeIte
   container.innerHTML = `
     <div class="flex h-screen overflow-hidden">
       <!-- Sidebar -->
-      <aside id="sidebar" class="w-64 gradient-navy flex flex-col shrink-0 transition-all duration-300 max-md:fixed max-md:z-40 max-md:h-full max-md:-translate-x-full">
+      <aside id="sidebar" class="w-64 gradient-navy flex flex-col shrink-0 transition-all duration-300 relative z-10 max-md:fixed max-md:z-40 max-md:h-full max-md:-translate-x-full">
         <!-- Logo -->
         <div class="p-5 border-b border-white/10">
           <div class="flex items-center gap-3">
@@ -79,7 +79,7 @@ export function createDashboardLayout(container, { role, sidebarItems, activeIte
       <!-- Main Content -->
       <div class="flex-1 flex flex-col overflow-hidden">
         <!-- Topbar -->
-        <header class="h-16 bg-white border-b border-slate-200 flex items-center justify-between px-6 shrink-0">
+        <header class="h-16 bg-white border-b border-slate-200 flex items-center justify-between px-6 shrink-0 relative z-20">
           <div class="flex items-center gap-4">
             <button id="menuToggle" class="md:hidden p-2 rounded-lg hover:bg-slate-100">
               <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>

@@ -376,13 +376,13 @@ body {
   content: "";
   position: fixed;
   inset: 0;
-  z-index: -1;
-  /* Bottom layer */
+  z-index: 1;
+  /* Above base backgrounds, Below content */
   background-size: cover;
   background-position: center;
   background-repeat: no-repeat;
-  opacity: 0.35;
-  /* Higher opacity since it's behind a semi-transparent layer */
+  opacity: 0.15;
+  /* Subtler since it's on top of gradients */
   pointer-events: none;
   filter: saturate(0.8) contrast(1.1);
 }
