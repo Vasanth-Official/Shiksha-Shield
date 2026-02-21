@@ -10,57 +10,57 @@ Chart.register(ArcElement, Tooltip, Legend, PieController);
 let currentChart = null;
 
 export async function renderTeacherDashboard(container) {
-    const user = getState().user;
-    const sidebarItems = [
-        { id: 'overview', label: 'Risk Overview', icon: ICONS.dashboard },
-        { id: 'students', label: 'Student List', icon: ICONS.students },
-        { id: 'add', label: 'Add / Update Data', icon: ICONS.plus },
-        { id: 'alerts', label: 'Risk Alerts', icon: ICONS.alert },
-    ];
+  const user = getState().user;
+  const sidebarItems = [
+    { id: 'overview', label: 'Risk Overview', icon: ICONS.dashboard },
+    { id: 'students', label: 'Student List', icon: ICONS.students },
+    { id: 'add', label: 'Add / Update Data', icon: ICONS.plus },
+    { id: 'alerts', label: 'Risk Alerts', icon: ICONS.alert },
+  ];
 
-    let activeSection = 'overview';
-    const mainContent = createDashboardLayout(container, {
-        role: 'teacher',
-        sidebarItems,
-        activeItem: activeSection,
-        onItemClick: (id) => {
-            activeSection = id;
-            renderSection(mainContent, activeSection, user);
-            // Update active link
-            container.querySelectorAll('[data-nav]').forEach(l => {
-                l.classList.toggle('active', l.dataset.nav === id);
-            });
-        }
-    });
+  let activeSection = 'overview';
+  const mainContent = createDashboardLayout(container, {
+    role: 'teacher',
+    sidebarItems,
+    activeItem: activeSection,
+    onItemClick: (id) => {
+      activeSection = id;
+      renderSection(mainContent, activeSection, user);
+      // Update active link
+      container.querySelectorAll('[data-nav]').forEach(l => {
+        l.classList.toggle('active', l.dataset.nav === id);
+      });
+    }
+  });
 
-    document.getElementById('pageTitle').textContent = 'Teacher Dashboard';
-    renderSection(mainContent, activeSection, user);
+  document.getElementById('pageTitle').textContent = 'Teacher Dashboard';
+  renderSection(mainContent, activeSection, user);
 }
 
 async function renderSection(content, section, user) {
-    if (currentChart) { currentChart.destroy(); currentChart = null; }
+  if (currentChart) { currentChart.destroy(); currentChart = null; }
 
-    switch (section) {
-        case 'overview': await renderOverview(content, user); break;
-        case 'students': await renderStudentTable(content, user); break;
-        case 'add': renderAddForm(content, user); break;
-        case 'alerts': await renderAlerts(content, user); break;
-    }
+  switch (section) {
+    case 'overview': await renderOverview(content, user); break;
+    case 'students': await renderStudentTable(content, user); break;
+    case 'add': renderAddForm(content, user); break;
+    case 'alerts': await renderAlerts(content, user); break;
+  }
 }
 
 async function renderOverview(content, user) {
-    content.innerHTML = '<div class="flex items-center justify-center py-20"><div class="w-8 h-8 border-3 border-saffron border-t-transparent rounded-full animate-spin"></div></div>';
+  content.innerHTML = '<div class="flex items-center justify-center py-20"><div class="w-8 h-8 border-3 border-saffron border-t-transparent rounded-full animate-spin"></div></div>';
 
-    try {
-        const [overview, trends] = await Promise.all([
-            api(`/analytics/overview?school_id=${user.school_id || 1}`),
-            api('/analytics/trends')
-        ]);
+  try {
+    const [overview, trends] = await Promise.all([
+      api(`/analytics/overview?school_id=${user.school_id || 1}`),
+      api('/analytics/trends')
+    ]);
 
-        const dist = overview.risk_distribution || {};
-        const total = overview.total_students || 0;
+    const dist = overview.risk_distribution || {};
+    const total = overview.total_students || 0;
 
-        content.innerHTML = `
+    content.innerHTML = `
       <!-- Stat Cards -->
       <div class="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
         ${statCard('Total Students', total, 'navy', ICONS.students)}
@@ -128,40 +128,40 @@ async function renderOverview(content, user) {
       </div>
     `;
 
-        // Pie Chart
-        const ctx = document.getElementById('riskPieChart');
-        if (ctx) {
-            currentChart = new Chart(ctx, {
-                type: 'pie',
-                data: {
-                    labels: ['Low', 'Moderate', 'High', 'Critical'],
-                    datasets: [{
-                        data: [dist.Low || 0, dist.Moderate || 0, dist.High || 0, dist.Critical || 0],
-                        backgroundColor: ['#10B981', '#F59E0B', '#F97316', '#EF4444'],
-                        borderWidth: 2,
-                        borderColor: '#fff'
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    plugins: {
-                        legend: { position: 'bottom', labels: { padding: 16, font: { family: 'Inter', size: 12, weight: 600 } } }
-                    }
-                }
-            });
+    // Pie Chart
+    const ctx = document.getElementById('riskPieChart');
+    if (ctx) {
+      currentChart = new Chart(ctx, {
+        type: 'pie',
+        data: {
+          labels: ['Low', 'Moderate', 'High', 'Critical'],
+          datasets: [{
+            data: [dist.Low || 0, dist.Moderate || 0, dist.High || 0, dist.Critical || 0],
+            backgroundColor: ['#10B981', '#F59E0B', '#F97316', '#EF4444'],
+            borderWidth: 2,
+            borderColor: '#fff'
+          }]
+        },
+        options: {
+          responsive: true,
+          plugins: {
+            legend: { position: 'bottom', labels: { padding: 16, font: { family: 'Inter', size: 12, weight: 600 } } }
+          }
         }
-    } catch (err) {
-        content.innerHTML = `<div class="card p-8 text-center"><p class="text-slate-500">Error loading data. Ensure the backend server is running on port 5000.</p><p class="text-xs text-slate-400 mt-2">${err.message}</p></div>`;
+      });
     }
+  } catch (err) {
+    content.innerHTML = `<div class="card p-8 text-center"><p class="text-slate-500">Error loading data. Ensure the backend server is running on port 5000.</p><p class="text-xs text-slate-400 mt-2">${err.message}</p></div>`;
+  }
 }
 
 async function renderStudentTable(content, user) {
-    content.innerHTML = '<div class="flex items-center justify-center py-20"><div class="w-8 h-8 border-3 border-saffron border-t-transparent rounded-full animate-spin"></div></div>';
+  content.innerHTML = '<div class="flex items-center justify-center py-20"><div class="w-8 h-8 border-3 border-saffron border-t-transparent rounded-full animate-spin"></div></div>';
 
-    try {
-        const students = await api(`/students?school_id=${user.school_id || 1}`);
+  try {
+    const students = await api(`/students?school_id=${user.school_id || 1}`);
 
-        content.innerHTML = `
+    content.innerHTML = `
       <div class="card overflow-hidden">
         <div class="p-4 border-b border-slate-200 flex flex-wrap items-center gap-3 justify-between">
           <h3 class="font-bold text-slate-800">Student Risk Table</h3>
@@ -207,37 +207,37 @@ async function renderStudentTable(content, user) {
       </div>
     `;
 
-        // Search and filter
-        const tbody = document.getElementById('studentTableBody');
-        let filteredStudents = students;
+    // Search and filter
+    const tbody = document.getElementById('studentTableBody');
+    let filteredStudents = students;
 
-        function applyFilters() {
-            const search = document.getElementById('searchInput').value.toLowerCase();
-            const riskFilter = document.getElementById('filterRisk').value;
+    function applyFilters() {
+      const search = document.getElementById('searchInput').value.toLowerCase();
+      const riskFilter = document.getElementById('filterRisk').value;
 
-            filteredStudents = students.filter(s => {
-                const matchSearch = !search ||
-                    s.student_uid.toLowerCase().includes(search) ||
-                    s.name.toLowerCase().includes(search);
-                const matchRisk = !riskFilter || s.risk_category === riskFilter;
-                return matchSearch && matchRisk;
-            });
+      filteredStudents = students.filter(s => {
+        const matchSearch = !search ||
+          s.student_uid.toLowerCase().includes(search) ||
+          s.name.toLowerCase().includes(search);
+        const matchRisk = !riskFilter || s.risk_category === riskFilter;
+        return matchSearch && matchRisk;
+      });
 
-            tbody.innerHTML = renderStudentRows(filteredStudents);
-            attachRowActions(filteredStudents);
-        }
-
-        document.getElementById('searchInput')?.addEventListener('input', applyFilters);
-        document.getElementById('filterRisk')?.addEventListener('change', applyFilters);
-
-        attachRowActions(students);
-    } catch (err) {
-        content.innerHTML = `<div class="card p-8 text-center"><p class="text-slate-500">Error loading students.</p></div>`;
+      tbody.innerHTML = renderStudentRows(filteredStudents);
+      attachRowActions(filteredStudents);
     }
+
+    document.getElementById('searchInput')?.addEventListener('input', applyFilters);
+    document.getElementById('filterRisk')?.addEventListener('change', applyFilters);
+
+    attachRowActions(students);
+  } catch (err) {
+    content.innerHTML = `<div class="card p-8 text-center"><p class="text-slate-500">Error loading students.</p></div>`;
+  }
 }
 
 function renderStudentRows(students) {
-    return students.map(s => `
+  return students.map(s => `
     <tr>
       <td class="font-mono text-xs text-slate-500">${s.student_uid}</td>
       <td class="font-medium">${s.name}</td>
@@ -262,18 +262,18 @@ function renderStudentRows(students) {
 }
 
 function attachRowActions(students) {
-    document.querySelectorAll('.view-btn').forEach(btn => {
-        btn.addEventListener('click', () => showExplainModal(btn.dataset.id));
-    });
-    document.querySelectorAll('.intervention-btn').forEach(btn => {
-        btn.addEventListener('click', () => showInterventionModal(btn.dataset.id, btn.dataset.cause, btn.dataset.name));
-    });
+  document.querySelectorAll('.view-btn').forEach(btn => {
+    btn.addEventListener('click', () => showExplainModal(btn.dataset.id));
+  });
+  document.querySelectorAll('.intervention-btn').forEach(btn => {
+    btn.addEventListener('click', () => showInterventionModal(btn.dataset.id, btn.dataset.cause, btn.dataset.name));
+  });
 }
 
 async function showExplainModal(studentId) {
-    const overlay = document.createElement('div');
-    overlay.className = 'modal-overlay';
-    overlay.innerHTML = `
+  const overlay = document.createElement('div');
+  overlay.className = 'modal-overlay';
+  overlay.innerHTML = `
     <div class="modal-content p-6">
       <div class="flex items-center justify-between mb-4">
         <h3 class="font-bold text-lg text-slate-800">🧠 AI Risk Explanation</h3>
@@ -285,15 +285,15 @@ async function showExplainModal(studentId) {
       </div>
     </div>
   `;
-    document.body.appendChild(overlay);
-    overlay.querySelector('.close-modal').addEventListener('click', () => overlay.remove());
-    overlay.addEventListener('click', (e) => { if (e.target === overlay) overlay.remove(); });
+  document.body.appendChild(overlay);
+  overlay.querySelector('.close-modal').addEventListener('click', () => overlay.remove());
+  overlay.addEventListener('click', (e) => { if (e.target === overlay) overlay.remove(); });
 
-    try {
-        const data = await api(`/students/${studentId}/explain`);
-        const student = await api(`/students/${studentId}`);
+  try {
+    const data = await api(`/students/${studentId}/explain`);
+    const student = await api(`/students/${studentId}`);
 
-        document.getElementById('explainContent').innerHTML = `
+    document.getElementById('explainContent').innerHTML = `
       <div class="text-left space-y-4">
         <div class="flex items-center gap-4 p-4 bg-slate-50 rounded-xl">
           <div class="w-12 h-12 rounded-xl gradient-navy flex items-center justify-center text-white font-bold">${student.student_uid?.slice(-3)}</div>
@@ -333,15 +333,15 @@ async function showExplainModal(studentId) {
         </div>
       </div>
     `;
-    } catch (err) {
-        document.getElementById('explainContent').innerHTML = '<p class="text-red-500">Failed to load explanation</p>';
-    }
+  } catch (err) {
+    document.getElementById('explainContent').innerHTML = '<p class="text-red-500">Failed to load explanation</p>';
+  }
 }
 
 async function showInterventionModal(studentId, cause, name) {
-    const overlay = document.createElement('div');
-    overlay.className = 'modal-overlay';
-    overlay.innerHTML = `
+  const overlay = document.createElement('div');
+  overlay.className = 'modal-overlay';
+  overlay.innerHTML = `
     <div class="modal-content p-6">
       <div class="flex items-center justify-between mb-4">
         <h3 class="font-bold text-lg text-slate-800">🎯 Intervention Suggestions</h3>
@@ -352,14 +352,14 @@ async function showInterventionModal(studentId, cause, name) {
       </div>
     </div>
   `;
-    document.body.appendChild(overlay);
-    overlay.querySelector('.close-modal').addEventListener('click', () => overlay.remove());
-    overlay.addEventListener('click', (e) => { if (e.target === overlay) overlay.remove(); });
+  document.body.appendChild(overlay);
+  overlay.querySelector('.close-modal').addEventListener('click', () => overlay.remove());
+  overlay.addEventListener('click', (e) => { if (e.target === overlay) overlay.remove(); });
 
-    try {
-        const suggestions = await api(`/interventions/suggestions/${encodeURIComponent(cause)}`);
+  try {
+    const suggestions = await api(`/interventions/suggestions/${encodeURIComponent(cause)}`);
 
-        document.getElementById('interventionContent').innerHTML = `
+    document.getElementById('interventionContent').innerHTML = `
       <div class="text-left space-y-5">
         <div class="p-3 bg-slate-50 rounded-lg">
           <span class="text-sm text-slate-500">Student:</span>
@@ -407,41 +407,41 @@ async function showInterventionModal(studentId, cause, name) {
       </div>
     `;
 
-        // Mark intervention handlers
-        overlay.querySelectorAll('.mark-intervention').forEach(btn => {
-            btn.addEventListener('click', async () => {
-                btn.disabled = true;
-                btn.textContent = 'Saving...';
-                try {
-                    await api('/interventions', {
-                        method: 'POST',
-                        body: {
-                            student_id: parseInt(studentId),
-                            cause_type: cause,
-                            action_taken: btn.dataset.action,
-                            officer_id: getState().user?.id || 1
-                        }
-                    });
-                    btn.textContent = '✓ Recorded';
-                    btn.classList.remove('btn-primary');
-                    btn.classList.add('bg-emerald-500', 'text-white', 'cursor-default');
-                    document.getElementById('interventionStatus').innerHTML = `
+    // Mark intervention handlers
+    overlay.querySelectorAll('.mark-intervention').forEach(btn => {
+      btn.addEventListener('click', async () => {
+        btn.disabled = true;
+        btn.textContent = 'Saving...';
+        try {
+          await api('/interventions', {
+            method: 'POST',
+            body: {
+              student_id: parseInt(studentId),
+              cause_type: cause,
+              action_taken: btn.dataset.action,
+              officer_id: getState().user?.id || 1
+            }
+          });
+          btn.textContent = '✓ Recorded';
+          btn.classList.remove('btn-primary');
+          btn.classList.add('bg-emerald-500', 'text-white', 'cursor-default');
+          document.getElementById('interventionStatus').innerHTML = `
             <div class="p-3 bg-emerald-50 border border-emerald-200 rounded-lg text-sm text-emerald-700">
               ✅ Intervention recorded successfully. Follow-up status: Pending.
             </div>
           `;
-                } catch (err) {
-                    btn.textContent = 'Error';
-                }
-            });
-        });
-    } catch (err) {
-        document.getElementById('interventionContent').innerHTML = '<p class="text-red-500">Failed to load suggestions</p>';
-    }
+        } catch (err) {
+          btn.textContent = 'Error';
+        }
+      });
+    });
+  } catch (err) {
+    document.getElementById('interventionContent').innerHTML = '<p class="text-red-500">Failed to load suggestions</p>';
+  }
 }
 
 function renderAddForm(content, user) {
-    content.innerHTML = `
+  content.innerHTML = `
     <div class="max-w-4xl mx-auto">
       <div class="card p-6">
         <h3 class="font-bold text-lg text-slate-800 mb-1">Detailed Student Data Entry</h3>
@@ -462,21 +462,6 @@ function renderAddForm(content, user) {
               <div>
                 <label class="form-label">Student Name</label>
                 <input type="text" id="formName" class="form-input" required placeholder="Full Name" />
-              </div>
-              <div>
-                <label class="form-label">Gender</label>
-                <select id="formGender" class="form-input">
-                  <option value="Female">Female</option>
-                  <option value="Male">Male</option>
-                </select>
-              </div>
-              <div>
-                <label class="form-label">Marital Status</label>
-                <select id="formMarital" class="form-input">
-                  <option value="Single">Single</option>
-                  <option value="Married">Married</option>
-                  <option value="Divorced">Divorced</option>
-                </select>
               </div>
               <div>
                 <label class="form-label">Age at Enrollment</label>
@@ -538,10 +523,6 @@ function renderAddForm(content, user) {
                 <label class="form-label">Admission Grade</label>
                 <input type="number" id="formAdmGrade" class="form-input" step="0.1" />
               </div>
-              <div class="md:col-span-2">
-                <label class="form-label">Course / Stream</label>
-                <input type="text" id="formCourse" class="form-input" placeholder="e.g. Science" />
-              </div>
               <div>
                 <label class="form-label">Application Mode</label>
                 <select id="formAppMode" class="form-input">
@@ -583,16 +564,8 @@ function renderAddForm(content, user) {
                 </select>
               </div>
               <div>
-                <label class="form-label">Unemployment Rate</label>
-                <input type="number" id="formUnemp" class="form-input" step="0.1" value="7.5" />
-              </div>
-              <div>
                 <label class="form-label">Inflation Rate</label>
                 <input type="number" id="formInf" class="form-input" step="0.1" value="5.2" />
-              </div>
-              <div>
-                <label class="form-label">GDP</label>
-                <input type="number" id="formGdp" class="form-input" step="0.1" value="2500" />
               </div>
               <div>
                 <label class="form-label">Fees Up to Date</label>
@@ -668,57 +641,53 @@ function renderAddForm(content, user) {
     </div>
   `;
 
-    document.getElementById('addForm').addEventListener('submit', async (e) => {
-        e.preventDefault();
-        const resultDiv = document.getElementById('predictionResult');
-        resultDiv.className = 'mt-8';
-        resultDiv.innerHTML = '<div class="text-center py-6"><div class="w-10 h-10 border-4 border-saffron border-t-transparent rounded-full animate-spin mx-auto"></div><p class="text-sm text-slate-400 mt-3 font-medium">SHIKSHA SHIELD AI ENGINE: CROSS-REFERENCING 40+ DATA POINTS...</p></div>';
+  document.getElementById('addForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const resultDiv = document.getElementById('predictionResult');
+    resultDiv.className = 'mt-8';
+    resultDiv.innerHTML = '<div class="text-center py-6"><div class="w-10 h-10 border-4 border-saffron border-t-transparent rounded-full animate-spin mx-auto"></div><p class="text-sm text-slate-400 mt-3 font-medium">SHIKSHA SHIELD AI ENGINE: CROSS-REFERENCING Assessment...</p></div>';
 
-        const payload = {
-            student_id: document.getElementById('formStudentId').value || undefined,
-            name: document.getElementById('formName').value,
-            gender: document.getElementById('formGender').value,
-            marital_status: document.getElementById('formMarital').value,
-            age_at_enrollment: parseInt(document.getElementById('formAge').value || 0),
-            sibling_count: parseInt(document.getElementById('formSiblings').value || 0),
-            nacionality: document.getElementById('formNacionality').value,
-            displaced: parseInt(document.getElementById('formDisplaced').value),
-            educational_special_needs: parseInt(document.getElementById('formNeeds').value),
-            class: parseInt(document.getElementById('formClass').value),
-            attendance: parseFloat(document.getElementById('formAttendance').value),
-            academic_score: parseFloat(document.getElementById('formAcademic').value),
-            menstrual_absence: parseInt(document.getElementById('formMenstrual').value),
-            prev_qualification_grade: parseFloat(document.getElementById('formPrevGrade').value || 0),
-            admission_grade: parseFloat(document.getElementById('formAdmGrade').value || 0),
-            course: document.getElementById('formCourse').value,
-            application_mode: document.getElementById('formAppMode').value,
-            income_band: document.getElementById('formIncome').value,
-            debtor: parseInt(document.getElementById('formDebtor').value),
-            scholarship_holder: parseInt(document.getElementById('formScholarship').value),
-            unemployment_rate: parseFloat(document.getElementById('formUnemp').value),
-            inflation_rate: parseFloat(document.getElementById('formInf').value),
-            gdp: parseFloat(document.getElementById('formGdp').value),
-            tuition_fees_up_to_date: parseInt(document.getElementById('formFees').value),
-            migration_flag: parseInt(document.getElementById('formMigration').value),
-            marriage_risk_flag: parseInt(document.getElementById('formMarriage').value),
-            eve_teasing: parseInt(document.getElementById('formEve').value),
-            abuse: parseInt(document.getElementById('formAbuse').value),
-            school_distance: parseFloat(document.getElementById('formDist').value || 0),
-            age_grade_mismatch: parseInt(document.getElementById('formMismatch').value),
-            remarks: document.getElementById('formRemarks').value,
-            school_id: user.school_id || 1
-        };
+    const payload = {
+      student_id: document.getElementById('formStudentId').value || undefined,
+      name: document.getElementById('formName').value,
+      gender: 'Female',
+      age_at_enrollment: parseInt(document.getElementById('formAge').value || 0),
+      sibling_count: parseInt(document.getElementById('formSiblings').value || 0),
+      nacionality: document.getElementById('formNacionality').value,
+      displaced: parseInt(document.getElementById('formDisplaced').value),
+      educational_special_needs: parseInt(document.getElementById('formNeeds').value),
+      class: parseInt(document.getElementById('formClass').value),
+      attendance: parseFloat(document.getElementById('formAttendance').value),
+      academic_score: parseFloat(document.getElementById('formAcademic').value),
+      menstrual_absence: parseInt(document.getElementById('formMenstrual').value),
+      prev_qualification_grade: parseFloat(document.getElementById('formPrevGrade').value || 0),
+      admission_grade: parseFloat(document.getElementById('formAdmGrade').value || 0),
+      application_mode: document.getElementById('formAppMode').value,
+      income_band: document.getElementById('formIncome').value,
+      debtor: parseInt(document.getElementById('formDebtor').value),
+      scholarship_holder: parseInt(document.getElementById('formScholarship').value),
+      inflation_rate: parseFloat(document.getElementById('formInf').value),
+      tuition_fees_up_to_date: parseInt(document.getElementById('formFees').value),
+      migration_flag: parseInt(document.getElementById('formMigration').value),
+      marriage_risk_flag: parseInt(document.getElementById('formMarriage').value),
+      eve_teasing: parseInt(document.getElementById('formEve').value),
+      abuse: parseInt(document.getElementById('formAbuse').value),
+      school_distance: parseFloat(document.getElementById('formDist').value || 0),
+      age_grade_mismatch: parseInt(document.getElementById('formMismatch').value),
+      remarks: document.getElementById('formRemarks').value,
+      school_id: user.school_id || 1
+    };
 
-        try {
-            const endpoint = payload.student_id ? '/students/predict' : '/students';
-            const result = await api(endpoint, { method: 'POST', body: payload });
+    try {
+      const endpoint = payload.student_id ? '/students/predict' : '/students';
+      const result = await api(endpoint, { method: 'POST', body: payload });
 
-            resultDiv.innerHTML = `
+      resultDiv.innerHTML = `
         <div class="p-6 rounded-2xl border-2 animate-fade-in ${result.risk_category === 'Critical' ? 'border-red-300 bg-red-50' :
-                    result.risk_category === 'High' ? 'border-orange-300 bg-orange-50' :
-                        result.risk_category === 'Moderate' ? 'border-yellow-300 bg-yellow-50' :
-                            'border-green-300 bg-green-50'
-                }">
+          result.risk_category === 'High' ? 'border-orange-300 bg-orange-50' :
+            result.risk_category === 'Moderate' ? 'border-yellow-300 bg-yellow-50' :
+              'border-green-300 bg-green-50'
+        }">
           <div class="flex items-center justify-between mb-4">
             <h4 class="font-bold text-slate-800 text-lg">AI Comprehensive Prediction</h4>
             ${riskBadge(result.risk_category)}
@@ -743,20 +712,20 @@ function renderAddForm(content, user) {
           ${result.student_uid ? `<p class="text-xs text-slate-400 mt-4 font-mono">NEW SYSTEM ENTRY RECORDED: ${result.student_uid}</p>` : ''}
         </div>
       `;
-        } catch (err) {
-            resultDiv.innerHTML = `<div class="p-4 bg-red-50 rounded-lg text-red-600 text-sm border border-red-200">System Error: ${err.message}</div>`;
-        }
-    });
+    } catch (err) {
+      resultDiv.innerHTML = `<div class="p-4 bg-red-50 rounded-lg text-red-600 text-sm border border-red-200">System Error: ${err.message}</div>`;
+    }
+  });
 }
 
 async function renderAlerts(content, user) {
-    content.innerHTML = '<div class="flex items-center justify-center py-20"><div class="w-8 h-8 border-3 border-saffron border-t-transparent rounded-full animate-spin"></div></div>';
+  content.innerHTML = '<div class="flex items-center justify-center py-20"><div class="w-8 h-8 border-3 border-saffron border-t-transparent rounded-full animate-spin"></div></div>';
 
-    try {
-        const students = await api(`/students?school_id=${user.school_id || 1}`);
-        const criticalStudents = students.filter(s => s.risk_score > 60);
+  try {
+    const students = await api(`/students?school_id=${user.school_id || 1}`);
+    const criticalStudents = students.filter(s => s.risk_score > 60);
 
-        content.innerHTML = `
+    content.innerHTML = `
       <div class="card p-6 mb-4">
         <div class="flex items-center gap-3 mb-1">
           <div class="w-10 h-10 rounded-xl gradient-saffron flex items-center justify-center text-white">${ICONS.alert}</div>
@@ -771,9 +740,9 @@ async function renderAlerts(content, user) {
       <div class="space-y-3">
         ${criticalStudents.map((s, i) => `
           <div class="card p-4 flex items-center gap-4 animate-slide-in border-l-4 ${s.risk_category === 'Critical' ? 'border-l-red-500' : 'border-l-orange-500'
-            }" style="animation-delay: ${i * 0.03}s">
+      }" style="animation-delay: ${i * 0.03}s">
             <div class="w-10 h-10 rounded-xl ${s.risk_category === 'Critical' ? 'bg-red-100 text-red-600' : 'bg-orange-100 text-orange-600'
-            } flex items-center justify-center font-bold text-sm">
+      } flex items-center justify-center font-bold text-sm">
               ${Math.round(s.risk_score)}
             </div>
             <div class="flex-1 min-w-0">
@@ -787,10 +756,10 @@ async function renderAlerts(content, user) {
       </div>
     `;
 
-        content.querySelectorAll('.view-alert-btn').forEach(btn => {
-            btn.addEventListener('click', () => showExplainModal(btn.dataset.id));
-        });
-    } catch (err) {
-        content.innerHTML = `<div class="card p-8 text-center"><p class="text-slate-500">Error loading alerts.</p></div>`;
-    }
+    content.querySelectorAll('.view-alert-btn').forEach(btn => {
+      btn.addEventListener('click', () => showExplainModal(btn.dataset.id));
+    });
+  } catch (err) {
+    content.innerHTML = `<div class="card p-8 text-center"><p class="text-slate-500">Error loading alerts.</p></div>`;
+  }
 }

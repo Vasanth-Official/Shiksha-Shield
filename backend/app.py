@@ -74,10 +74,8 @@ def init_db():
             marriage_risk_flag INTEGER DEFAULT 0,
             
             -- Comprehensive Parameters
-            marital_status TEXT,
             application_mode TEXT,
             application_order INTEGER,
-            course TEXT,
             daytime_evening INTEGER,
             prev_qualification TEXT,
             prev_qualification_grade REAL,
@@ -91,7 +89,7 @@ def init_db():
             educational_special_needs INTEGER,
             debtor INTEGER,
             tuition_fees_up_to_date INTEGER,
-            gender TEXT,
+            gender TEXT DEFAULT 'Female',
             scholarship_holder INTEGER,
             age_at_enrollment INTEGER,
             international INTEGER,
@@ -101,9 +99,7 @@ def init_db():
             curricular_units_approved INTEGER DEFAULT 0,
             curricular_units_grade REAL DEFAULT 0,
             curricular_units_without_evaluations INTEGER DEFAULT 0,
-            unemployment_rate REAL,
             inflation_rate REAL,
-            gdp REAL,
             
             -- Specific requested parameters
             school_distance REAL,
@@ -348,7 +344,6 @@ def seed_data(db):
     income_weights = [0.05, 0.25, 0.45, 0.25]
     classes = [6, 7, 8, 9, 10, 11, 12]
     class_weights = [0.2, 0.18, 0.16, 0.15, 0.13, 0.1, 0.08]
-    courses = ['Arts', 'Science', 'Commerce', 'Vocational']
     occupations = ['Farmer', 'Labourer', 'Teacher', 'Clerk', 'Shopkeeper', 'Unemployed']
 
     for i in range(1, 1001):
@@ -386,10 +381,8 @@ def seed_data(db):
             'income_band': income,
             'migration_flag': migration,
             'marriage_risk_flag': marriage,
-            'marital_status': 'Single',
             'application_mode': random.choice(['online', 'offline']),
             'application_order': random.randint(1, 5),
-            'course': random.choice(courses),
             'daytime_evening': random.choice([0, 1]),
             'prev_qualification': random.choice(['10th Pass', '12th Pass']),
             'prev_qualification_grade': round(random.uniform(50, 90), 1),
@@ -413,9 +406,7 @@ def seed_data(db):
             'curricular_units_approved': random.randint(5, 15),
             'curricular_units_grade': round(random.uniform(10, 18), 1),
             'curricular_units_without_evaluations': random.randint(0, 3),
-            'unemployment_rate': round(random.uniform(5, 15), 1),
             'inflation_rate': round(random.uniform(4, 8), 1),
-            'gdp': round(random.uniform(2000, 3000), 1),
             'school_distance': round(random.uniform(0.5, 10), 1),
             'sibling_count': random.randint(0, 5),
             'age_grade_mismatch': 1 if random.random() < 0.1 else 0,
@@ -440,21 +431,21 @@ def seed_data(db):
         db.execute('''INSERT INTO students
             (student_uid, name, school_id, class, attendance, academic_score,
              menstrual_absence, income_band, migration_flag, marriage_risk_flag,
-             marital_status, application_mode, application_order, course, daytime_evening,
+             application_mode, application_order, daytime_evening,
              prev_qualification, prev_qualification_grade, nacionality, mothers_qualification,
              fathers_qualification, mothers_occupation, fathers_occupation, admission_grade,
              displaced, educational_special_needs, debtor, tuition_fees_up_to_date, gender,
              scholarship_holder, age_at_enrollment, international, curricular_units_credited,
              curricular_units_enrolled, curricular_units_evaluations, curricular_units_approved,
-             curricular_units_grade, curricular_units_without_evaluations, unemployment_rate,
-             inflation_rate, gdp, school_distance, sibling_count, age_grade_mismatch,
+             curricular_units_grade, curricular_units_without_evaluations,
+             inflation_rate, school_distance, sibling_count, age_grade_mismatch,
              health_condition, institution_issues, eve_teasing, abuse, remarks,
              risk_score, risk_category, cause)
-            VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)''',
+            VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)''',
             (uid, name, s_id, cls, attendance, academic, menstrual_abs,
              income, migration, marriage,
-             student_data['marital_status'], student_data['application_mode'], student_data['application_order'],
-             student_data['course'], student_data['daytime_evening'], student_data['prev_qualification'],
+             student_data['application_mode'], student_data['application_order'],
+             student_data['daytime_evening'], student_data['prev_qualification'],
              student_data['prev_qualification_grade'], student_data['nacionality'], student_data['mothers_qualification'],
              student_data['fathers_qualification'], student_data['mothers_occupation'], student_data['fathers_occupation'],
              student_data['admission_grade'], student_data['displaced'], student_data['educational_special_needs'],
@@ -463,7 +454,7 @@ def seed_data(db):
              student_data['curricular_units_credited'], student_data['curricular_units_enrolled'],
              student_data['curricular_units_evaluations'], student_data['curricular_units_approved'],
              student_data['curricular_units_grade'], student_data['curricular_units_without_evaluations'],
-             student_data['unemployment_rate'], student_data['inflation_rate'], student_data['gdp'],
+             student_data['inflation_rate'],
              student_data['school_distance'], student_data['sibling_count'], student_data['age_grade_mismatch'],
              student_data['health_condition'], student_data['institution_issues'], student_data['eve_teasing'],
              student_data['abuse'], student_data['remarks'],
