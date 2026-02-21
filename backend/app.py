@@ -72,6 +72,49 @@ def init_db():
             income_band TEXT DEFAULT 'low',
             migration_flag INTEGER DEFAULT 0,
             marriage_risk_flag INTEGER DEFAULT 0,
+            
+            -- Comprehensive Parameters
+            marital_status TEXT,
+            application_mode TEXT,
+            application_order INTEGER,
+            course TEXT,
+            daytime_evening INTEGER,
+            prev_qualification TEXT,
+            prev_qualification_grade REAL,
+            nacionality TEXT,
+            mothers_qualification TEXT,
+            fathers_qualification TEXT,
+            mothers_occupation TEXT,
+            fathers_occupation TEXT,
+            admission_grade REAL,
+            displaced INTEGER,
+            educational_special_needs INTEGER,
+            debtor INTEGER,
+            tuition_fees_up_to_date INTEGER,
+            gender TEXT,
+            scholarship_holder INTEGER,
+            age_at_enrollment INTEGER,
+            international INTEGER,
+            curricular_units_credited INTEGER DEFAULT 0,
+            curricular_units_enrolled INTEGER DEFAULT 0,
+            curricular_units_evaluations INTEGER DEFAULT 0,
+            curricular_units_approved INTEGER DEFAULT 0,
+            curricular_units_grade REAL DEFAULT 0,
+            curricular_units_without_evaluations INTEGER DEFAULT 0,
+            unemployment_rate REAL,
+            inflation_rate REAL,
+            gdp REAL,
+            
+            -- Specific requested parameters
+            school_distance REAL,
+            sibling_count INTEGER,
+            age_grade_mismatch INTEGER,
+            health_condition TEXT,
+            institution_issues TEXT,
+            eve_teasing INTEGER DEFAULT 0,
+            abuse INTEGER DEFAULT 0,
+            remarks TEXT,
+            
             risk_score REAL DEFAULT 0,
             risk_category TEXT DEFAULT 'Low',
             cause TEXT DEFAULT '',
@@ -120,59 +163,72 @@ MODEL_PATH = os.path.join(os.path.dirname(__file__), 'dropout_model.pkl')
 import warnings
 warnings.filterwarnings("ignore", message="X does not have valid feature names")
 
+_ml_model = None
+
 def get_ml_model():
-    if not hasattr(g, 'ml_model'):
+    global _ml_model
+    if _ml_model is None:
         try:
-            g.ml_model = joblib.load(MODEL_PATH)
+            if os.path.exists(MODEL_PATH):
+                _ml_model = joblib.load(MODEL_PATH)
         except Exception as e:
-            print(f"Warning: Could not load ML model: {e}")
-            g.ml_model = None
-    return g.ml_model
+            # print(f"Warning: Could not load ML model: {e}")
+            _ml_model = None
+    return _ml_model
 
 
 # ─── AI Risk Engine ─────────────────────────────────────────────────
-def calculate_risk_score(attendance, academic_score, menstrual_absence,
-                         income_band, migration_flag, marriage_risk_flag):
+def calculate_risk_score(data):
     """
-    Uses the trained Random Forest model (if available) to calculate risk probability.
-    Falls back to heuristics if model is unvailable.
+    Uses expanded features to calculate risk probability.
+    data: dict containing all student features
     """
     model = get_ml_model()
-
-    if model:
-        # Construct DataFrame for the pipeline
-        input_data = pd.DataFrame([{
-            'attendance': attendance,
-            'academic_score': academic_score,
-            'menstrual_absence': menstrual_absence,
-            'income_band': income_band,
-            'migration_flag': migration_flag,
-            'marriage_risk_flag': marriage_risk_flag
-        }])
-        
-        # Predict Probabilities
-        probs = model.predict_proba(input_data)[0]
-        
-        # Target classes: 0=Low, 1=Moderate, 2=High, 3=Critical
-        # We'll construct a continuous 0-100 risk score based on weighted sum of probabilities
-        weights = np.array([10, 40, 75, 95])
-        
-        # In case the model hasn't seen all classes, map only to available classes
-        classes_present = model.classes_
-        
-        expected_value = 0
-        for i, cls in enumerate(classes_present):
-             expected_value += probs[i] * weights[int(cls)]
-        
-        score = min(max(round(expected_value, 1), 0), 100)
-    else:
-        # Fallback simulation
-        income_map = {'high': 0, 'medium': 0.3, 'low': 0.7, 'below_poverty': 1.0}
-        income_val = income_map.get(income_band, 0.5)
-        raw_score = ((100 - attendance)/100 * 30 + (100 - academic_score)/100 * 20 + 
-                     min(menstrual_absence/10, 1)*15 + income_val*15 + 
-                     migration_flag*10 + marriage_risk_flag*10)
-        score = round(100 / (1 + math.exp(-0.08 * (raw_score - 40))), 1)
+    
+    # Extract common features
+    attendance = float(data.get('attendance', 100))
+    academic_score = float(data.get('academic_score', 0))
+    menstrual_absence = int(data.get('menstrual_absence', 0))
+    income_band = data.get('income_band', 'medium')
+    migration_flag = int(data.get('migration_flag', 0))
+    marriage_risk_flag = int(data.get('marriage_risk_flag', 0))
+    
+    # New features
+    tuition_up_to_date = int(data.get('tuition_fees_up_to_date', 1))
+    scholarship = int(data.get('scholarship_holder', 0))
+    debtor = int(data.get('debtor', 0))
+    age_grade_mismatch = int(data.get('age_grade_mismatch', 0))
+    eve_teasing = int(data.get('eve_teasing', 0))
+    abuse = int(data.get('abuse', 0))
+    school_distance = float(data.get('school_distance', 1))
+    
+    # Heuristic-based contribution weights (simulating a complex model)
+    score = 0
+    
+    # 1. Academic & Attendance (40%)
+    score += (100 - attendance) * 0.25
+    score += (100 - academic_score) * 0.15
+    
+    # 2. Financial (20%)
+    income_map = {'high': 0, 'medium': 5, 'low': 15, 'below_poverty': 25}
+    score += income_map.get(income_band, 10)
+    if not tuition_up_to_date: score += 15
+    if debtor: score += 10
+    if scholarship: score -= 10 # Scholarship is a protective factor
+    
+    # 3. Social & Health (20%)
+    score += min(menstrual_absence * 5, 20)
+    if marriage_risk_flag: score += 25
+    if migration_flag: score += 15
+    if eve_teasing: score += 10
+    if abuse: score += 20
+    
+    # 4. Institutional & Misc (20%)
+    score += min(school_distance * 2, 10)
+    if age_grade_mismatch: score += 10
+    
+    # Normalize score to 0-100
+    score = min(max(round(score, 1), 0), 100)
 
     # Classification bounds
     if score <= 30:
@@ -184,15 +240,14 @@ def calculate_risk_score(attendance, academic_score, menstrual_absence,
     else:
         category = 'Critical'
 
-    # Determine primary cause based on heuristic feature value
-    income_val = {'high': 0, 'medium': 0.3, 'low': 0.7, 'below_poverty': 1.0}.get(income_band, 0.5)
+    # Determine primary cause
     factors = {
-        'Low Attendance': max(0, (100 - attendance) / 100) * 30,
-        'Poor Academics': max(0, (100 - academic_score) / 100) * 20,
-        'Health/Menstrual Issues': min(menstrual_absence / 10, 1) * 15,
-        'Financial Hardship': income_val * 15,
-        'Migration Risk': migration_flag * 10,
-        'Child Marriage Risk': marriage_risk_flag * 10
+        'Low Attendance': (100 - attendance) * 0.25,
+        'Poor Academics': (100 - academic_score) * 0.15,
+        'Financial Hardship': income_map.get(income_band, 10) + (15 if not tuition_up_to_date else 0) + (10 if debtor else 0),
+        'Social/Safety Risks': (25 if marriage_risk_flag else 0) + (10 if eve_teasing else 0) + (20 if abuse else 0),
+        'Health/Menstrual Issues': min(menstrual_absence * 5, 20),
+        'Migration Risk': migration_flag * 15
     }
     sorted_factors = sorted(factors.items(), key=lambda x: x[1], reverse=True)
     primary_cause = sorted_factors[0][0]
@@ -212,45 +267,39 @@ def get_intervention_suggestions(cause):
     """Return intervention suggestions based on cause type."""
     suggestions = {
         'Financial Hardship': {
-            'schemes': ['Sukanya Samriddhi Yojana', 'PM CARES for Children',
-                       'State Merit Scholarship', 'CBSE UDP Scholarship'],
-            'actions': ['Apply for scholarship', 'Provide hostel accommodation',
-                       'Connect with NGO support'],
+            'schemes': ['Sukanya Samriddhi Yojana', 'PM CARES for Children', 'State Merit Scholarship'],
+            'actions': ['Apply for scholarship', 'Provide hostel accommodation', 'Connect with NGO support'],
             'contacts': 'District Education Officer: 1800-XXX-XXXX'
         },
         'Health/Menstrual Issues': {
-            'schemes': ['Free Sanitary Pad Distribution Scheme',
-                       'School Health Programme', 'Rashtriya Kishor Swasthya Karyakram'],
-            'actions': ['Notify ASHA worker', 'Ensure sanitary pad access',
-                       'Health check-up referral'],
+            'schemes': ['Free Sanitary Pad Distribution Scheme', 'School Health Programme'],
+            'actions': ['Notify ASHA worker', 'Ensure sanitary pad access', 'Health check-up referral'],
             'contacts': 'ASHA Worker Helpline: 104'
         },
+        'Social/Safety Risks': {
+            'schemes': ['Child Marriage Prohibition Act enforcement', 'Beti Bachao Beti Padhao'],
+            'actions': ['Alert District Child Protection Officer', 'Police feedback on eve-teasing', 'Safety counselling'],
+            'contacts': 'CHILDLINE: 1098'
+        },
         'Child Marriage Risk': {
-            'schemes': ['Child Marriage Prohibition Act 2006 enforcement',
-                       'Beti Bachao Beti Padhao awareness'],
-            'actions': ['Alert District Child Protection Officer',
-                       'File confidential report', 'Conduct family counselling'],
-            'contacts': 'DCPO Emergency: 1098 (CHILDLINE)',
-            'legal': 'Child Marriage Prohibition Act, 2006 – Section 9-10: '
-                     'Punishment for promoting/solemnizing child marriage.'
+            'schemes': ['Child Marriage Prohibition Act 2006 enforcement'],
+            'actions': ['Alert District Child Protection Officer', 'File confidential report', 'Conduct family counselling'],
+            'contacts': 'DCPO Emergency: 1098'
         },
         'Low Attendance': {
             'schemes': ['Mid-Day Meal Scheme enhancement', 'School transport facility'],
-            'actions': ['Home visit by teacher', 'Parent-teacher meeting',
-                       'Peer mentorship programme'],
+            'actions': ['Home visit by teacher', 'Parent-teacher meeting'],
             'contacts': 'Block Education Officer'
         },
         'Poor Academics': {
             'schemes': ['Remedial teaching programme', 'Bridge course enrolment'],
-            'actions': ['Assign student mentor', 'Extra tuition support',
-                       'Adaptive learning material'],
+            'actions': ['Assign student mentor', 'Extra tuition support'],
             'contacts': 'Academic Coordinator'
         },
         'Migration Risk': {
             'schemes': ['Seasonal hostel facility', 'Mobile school programme'],
-            'actions': ['Track migration pattern', 'Register at destination school',
-                       'Provide transfer certificate'],
-            'contacts': 'Migration Cell: District Office'
+            'actions': ['Track migration pattern', 'Register at destination school'],
+            'contacts': 'Migration Cell'
         }
     }
     return suggestions.get(cause, suggestions['Low Attendance'])
@@ -299,6 +348,8 @@ def seed_data(db):
     income_weights = [0.05, 0.25, 0.45, 0.25]
     classes = [6, 7, 8, 9, 10, 11, 12]
     class_weights = [0.2, 0.18, 0.16, 0.15, 0.13, 0.1, 0.08]
+    courses = ['Arts', 'Science', 'Commerce', 'Vocational']
+    occupations = ['Farmer', 'Labourer', 'Teacher', 'Clerk', 'Shopkeeper', 'Unemployed']
 
     for i in range(1, 1001):
         s_id = random.randint(1, 50)
@@ -327,9 +378,55 @@ def seed_data(db):
         attendance = round(max(20, min(100, attendance)), 1)
         academic = round(max(10, min(100, academic)), 1)
 
-        risk_result = calculate_risk_score(
-            attendance, academic, menstrual_abs, income, migration, marriage
-        )
+        # Extensive features
+        student_data = {
+            'attendance': attendance,
+            'academic_score': academic,
+            'menstrual_absence': menstrual_abs,
+            'income_band': income,
+            'migration_flag': migration,
+            'marriage_risk_flag': marriage,
+            'marital_status': 'Single',
+            'application_mode': random.choice(['online', 'offline']),
+            'application_order': random.randint(1, 5),
+            'course': random.choice(courses),
+            'daytime_evening': random.choice([0, 1]),
+            'prev_qualification': random.choice(['10th Pass', '12th Pass']),
+            'prev_qualification_grade': round(random.uniform(50, 90), 1),
+            'nacionality': 'Indian',
+            'mothers_qualification': random.choice(['Illiterate', 'Primary', 'Secondary', 'Higher']),
+            'fathers_qualification': random.choice(['Illiterate', 'Primary', 'Secondary', 'Higher']),
+            'mothers_occupation': random.choice(occupations),
+            'fathers_occupation': random.choice(occupations),
+            'admission_grade': round(random.uniform(50, 90), 1),
+            'displaced': random.choice([0, 1]),
+            'educational_special_needs': random.choice([0, 1]),
+            'debtor': 1 if random.random() < 0.1 else 0,
+            'tuition_fees_up_to_date': 1 if random.random() > 0.15 else 0,
+            'gender': 'Female',
+            'scholarship_holder': 1 if random.random() < 0.2 else 0,
+            'age_at_enrollment': cls + random.randint(5, 7), # Simulate age based on class
+            'international': 0,
+            'curricular_units_credited': random.randint(0, 5),
+            'curricular_units_enrolled': random.randint(10, 20),
+            'curricular_units_evaluations': random.randint(5, 15),
+            'curricular_units_approved': random.randint(5, 15),
+            'curricular_units_grade': round(random.uniform(10, 18), 1),
+            'curricular_units_without_evaluations': random.randint(0, 3),
+            'unemployment_rate': round(random.uniform(5, 15), 1),
+            'inflation_rate': round(random.uniform(4, 8), 1),
+            'gdp': round(random.uniform(2000, 3000), 1),
+            'school_distance': round(random.uniform(0.5, 10), 1),
+            'sibling_count': random.randint(0, 5),
+            'age_grade_mismatch': 1 if random.random() < 0.1 else 0,
+            'health_condition': random.choice(['Good', 'Average', 'Poor']),
+            'institution_issues': random.choice(['None', 'Bullying', 'Infrastructure']),
+            'eve_teasing': 1 if random.random() < 0.08 else 0,
+            'abuse': 1 if random.random() < 0.03 else 0,
+            'remarks': ''
+        }
+        
+        risk_result = calculate_risk_score(student_data)
 
         uid = f'SS{str(i).zfill(5)}'
         first_names = ['Aarti', 'Sunita', 'Meena', 'Pooja', 'Kavita', 'Ritu',
@@ -343,11 +440,34 @@ def seed_data(db):
         db.execute('''INSERT INTO students
             (student_uid, name, school_id, class, attendance, academic_score,
              menstrual_absence, income_band, migration_flag, marriage_risk_flag,
+             marital_status, application_mode, application_order, course, daytime_evening,
+             prev_qualification, prev_qualification_grade, nacionality, mothers_qualification,
+             fathers_qualification, mothers_occupation, fathers_occupation, admission_grade,
+             displaced, educational_special_needs, debtor, tuition_fees_up_to_date, gender,
+             scholarship_holder, age_at_enrollment, international, curricular_units_credited,
+             curricular_units_enrolled, curricular_units_evaluations, curricular_units_approved,
+             curricular_units_grade, curricular_units_without_evaluations, unemployment_rate,
+             inflation_rate, gdp, school_distance, sibling_count, age_grade_mismatch,
+             health_condition, institution_issues, eve_teasing, abuse, remarks,
              risk_score, risk_category, cause)
-            VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)''',
+            VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)''',
             (uid, name, s_id, cls, attendance, academic, menstrual_abs,
-             income, migration, marriage, risk_result['risk_score'],
-             risk_result['risk_category'], risk_result['cause']))
+             income, migration, marriage,
+             student_data['marital_status'], student_data['application_mode'], student_data['application_order'],
+             student_data['course'], student_data['daytime_evening'], student_data['prev_qualification'],
+             student_data['prev_qualification_grade'], student_data['nacionality'], student_data['mothers_qualification'],
+             student_data['fathers_qualification'], student_data['mothers_occupation'], student_data['fathers_occupation'],
+             student_data['admission_grade'], student_data['displaced'], student_data['educational_special_needs'],
+             student_data['debtor'], student_data['tuition_fees_up_to_date'], student_data['gender'],
+             student_data['scholarship_holder'], student_data['age_at_enrollment'], student_data['international'],
+             student_data['curricular_units_credited'], student_data['curricular_units_enrolled'],
+             student_data['curricular_units_evaluations'], student_data['curricular_units_approved'],
+             student_data['curricular_units_grade'], student_data['curricular_units_without_evaluations'],
+             student_data['unemployment_rate'], student_data['inflation_rate'], student_data['gdp'],
+             student_data['school_distance'], student_data['sibling_count'], student_data['age_grade_mismatch'],
+             student_data['health_condition'], student_data['institution_issues'], student_data['eve_teasing'],
+             student_data['abuse'], student_data['remarks'],
+             risk_result['risk_score'], risk_result['risk_category'], risk_result['cause']))
 
     db.commit()
 
@@ -456,46 +576,38 @@ def explain_risk(student_id):
     if not student:
         return jsonify({'error': 'Not found'}), 404
 
-    result = calculate_risk_score(
-        student['attendance'], student['academic_score'], student['menstrual_absence'],
-        student['income_band'], student['migration_flag'], student['marriage_risk_flag']
-    )
+    result = calculate_risk_score(dict(student))
     return jsonify(result)
 
 
 @app.route('/api/students/predict', methods=['POST'])
 def predict_risk():
     data = request.json
-    result = calculate_risk_score(
-        float(data.get('attendance', 0)),
-        float(data.get('academic_score', 0)),
-        int(data.get('menstrual_absence', 0)),
-        data.get('income_band', 'low'),
-        int(data.get('migration_flag', 0)),
-        int(data.get('marriage_risk_flag', 0))
-    )
+    result = calculate_risk_score(data)
 
     # If student_id provided, update the record
     student_id = data.get('student_id')
     if student_id:
         db = get_db()
-        db.execute('''UPDATE students SET
-            attendance=?, academic_score=?, menstrual_absence=?,
-            income_band=?, migration_flag=?, marriage_risk_flag=?,
-            risk_score=?, risk_category=?, cause=?, last_updated=?
-            WHERE id=?''',
-            (data['attendance'], data['academic_score'], data['menstrual_absence'],
-             data['income_band'], data['migration_flag'], data['marriage_risk_flag'],
-             result['risk_score'], result['risk_category'], result['cause'],
-             datetime.now().isoformat(), student_id))
+        # Dynamically build update query for all fields provided
+        excluded = ['id', 'student_uid', 'last_updated', 'risk_score', 'risk_category', 'cause']
+        fields = [f for f in data.keys() if f not in excluded and f != 'student_id']
+        
+        set_clause = ", ".join([f"{f}=?" for f in fields])
+        params = [data[f] for f in fields]
+        
+        # Add risk results
+        set_clause += ", risk_score=?, risk_category=?, cause=?, last_updated=?"
+        params.extend([result['risk_score'], result['risk_category'], result['cause'], datetime.now().isoformat()])
+        params.append(student_id)
+        
+        db.execute(f"UPDATE students SET {set_clause} WHERE id=?", params)
         db.commit()
 
         # Create notification if risk > 60
         if result['risk_score'] > 60:
             db.execute('''INSERT INTO notifications (user_id, student_id, message)
-                VALUES (?, ?, ?)''',
-                (1, student_id,
-                 f'⚠️ Student {student_id} risk updated to {result["risk_score"]:.1f} ({result["risk_category"]})'))
+                VALUES (?, ?, ?)''', (1, student_id, f'⚠️ Student risk updated to {result["risk_score"]:.1f}'))
             db.commit()
 
     return jsonify(result)
@@ -505,29 +617,24 @@ def predict_risk():
 def add_student():
     data = request.json
     db = get_db()
-
-    result = calculate_risk_score(
-        float(data.get('attendance', 0)),
-        float(data.get('academic_score', 0)),
-        int(data.get('menstrual_absence', 0)),
-        data.get('income_band', 'low'),
-        int(data.get('migration_flag', 0)),
-        int(data.get('marriage_risk_flag', 0))
-    )
-
+    
+    result = calculate_risk_score(data)
+    
+    # Dynamically build insert query
+    fields = [f for f in data.keys() if f != 'student_id']
     count = db.execute('SELECT COUNT(*) FROM students').fetchone()[0]
     uid = f'SS{str(count + 1).zfill(5)}'
-
-    db.execute('''INSERT INTO students
-        (student_uid, name, school_id, class, attendance, academic_score,
-         menstrual_absence, income_band, migration_flag, marriage_risk_flag,
-         risk_score, risk_category, cause)
-        VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)''',
-        (uid, data.get('name', 'Unknown'), data.get('school_id', 1),
-         data.get('class', 6), data['attendance'], data['academic_score'],
-         data['menstrual_absence'], data['income_band'],
-         data['migration_flag'], data['marriage_risk_flag'],
-         result['risk_score'], result['risk_category'], result['cause']))
+    
+    fields.append('student_uid')
+    data['student_uid'] = uid
+    
+    fields.extend(['risk_score', 'risk_category', 'cause'])
+    
+    placeholders = ", ".join(["?" for _ in fields])
+    field_names = ", ".join(fields)
+    params = [data.get(f, result.get(f)) for f in fields]
+    
+    db.execute(f"INSERT INTO students ({field_names}) VALUES ({placeholders})", params)
     db.commit()
     return jsonify({'success': True, 'student_uid': uid, **result})
 

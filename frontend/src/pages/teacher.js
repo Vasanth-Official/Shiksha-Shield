@@ -167,7 +167,7 @@ async function renderStudentTable(content, user) {
           <h3 class="font-bold text-slate-800">Student Risk Table</h3>
           <div class="flex items-center gap-2">
             <div class="relative">
-              <input type="text" id="searchInput" class="form-input pl-9 py-2 text-sm" placeholder="Search students..." style="width: 220px" />
+              <input type="text" id="searchInput" class="form-input pl-10 py-2 text-sm" placeholder="Search students..." style="width: 220px" />
               <span class="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400">${ICONS.search}</span>
             </div>
             <select id="filterRisk" class="form-input py-2 text-sm" style="width: 130px">
@@ -442,79 +442,228 @@ async function showInterventionModal(studentId, cause, name) {
 
 function renderAddForm(content, user) {
     content.innerHTML = `
-    <div class="max-w-2xl mx-auto">
+    <div class="max-w-4xl mx-auto">
       <div class="card p-6">
-        <h3 class="font-bold text-lg text-slate-800 mb-1">Add / Update Monthly Data</h3>
-        <p class="text-sm text-slate-500 mb-6">Submit student data to trigger AI risk prediction.</p>
+        <h3 class="font-bold text-lg text-slate-800 mb-1">Detailed Student Data Entry</h3>
+        <p class="text-sm text-slate-500 mb-6">Comprehensive 40-point assessment for AI risk intelligence.</p>
 
-        <form id="addForm" class="space-y-4">
-          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <label class="form-label">Student ID (leave blank for new)</label>
-              <input type="number" id="formStudentId" class="form-input" placeholder="e.g. 42" />
-            </div>
-            <div>
-              <label class="form-label">Student Name</label>
-              <input type="text" id="formName" class="form-input" placeholder="Full name" />
+        <form id="addForm" class="space-y-8">
+          <!-- Section 1: Personal & Socio-Demographic -->
+          <div class="space-y-4">
+            <h4 class="text-sm font-bold text-navy uppercase tracking-wider flex items-center gap-2">
+              <span class="w-6 h-6 rounded-lg bg-navy/10 flex items-center justify-center">${ICONS.students}</span>
+              Personal & Socio-Demographic
+            </h4>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div>
+                <label class="form-label">Student ID (Internal)</label>
+                <input type="number" id="formStudentId" class="form-input" placeholder="Update only" />
+              </div>
+              <div>
+                <label class="form-label">Student Name</label>
+                <input type="text" id="formName" class="form-input" required placeholder="Full Name" />
+              </div>
+              <div>
+                <label class="form-label">Gender</label>
+                <select id="formGender" class="form-input">
+                  <option value="Female">Female</option>
+                  <option value="Male">Male</option>
+                </select>
+              </div>
+              <div>
+                <label class="form-label">Marital Status</label>
+                <select id="formMarital" class="form-input">
+                  <option value="Single">Single</option>
+                  <option value="Married">Married</option>
+                  <option value="Divorced">Divorced</option>
+                </select>
+              </div>
+              <div>
+                <label class="form-label">Age at Enrollment</label>
+                <input type="number" id="formAge" class="form-input" placeholder="e.g. 11" />
+              </div>
+              <div>
+                <label class="form-label">Sibling Count</label>
+                <input type="number" id="formSiblings" class="form-input" placeholder="e.g. 2" />
+              </div>
+              <div>
+                <label class="form-label">Nacionality</label>
+                <input type="text" id="formNacionality" class="form-input" value="Indian" />
+              </div>
+              <div>
+                <label class="form-label">Displaced</label>
+                <select id="formDisplaced" class="form-input">
+                  <option value="0">No</option>
+                  <option value="1">Yes</option>
+                </select>
+              </div>
+              <div>
+                <label class="form-label">Special Needs</label>
+                <select id="formNeeds" class="form-input">
+                  <option value="0">None</option>
+                  <option value="1">Physical/Learning</option>
+                </select>
+              </div>
             </div>
           </div>
 
-          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <label class="form-label">Attendance %</label>
-              <input type="number" id="formAttendance" class="form-input" min="0" max="100" step="0.1" placeholder="e.g. 75" required />
-            </div>
-            <div>
-              <label class="form-label">Academic Performance Score (0–100)</label>
-              <input type="number" id="formAcademic" class="form-input" min="0" max="100" step="0.1" placeholder="e.g. 60" required />
+          <!-- Section 2: Academic Background -->
+          <div class="space-y-4">
+            <h4 class="text-sm font-bold text-navy uppercase tracking-wider flex items-center gap-2">
+              <span class="w-6 h-6 rounded-lg bg-navy/10 flex items-center justify-center">${ICONS.chart}</span>
+              Academic Background
+            </h4>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div>
+                <label class="form-label">Current Class</label>
+                <input type="number" id="formClass" class="form-input" value="6" />
+              </div>
+              <div>
+                <label class="form-label">Attendance %</label>
+                <input type="number" id="formAttendance" class="form-input" required min="0" max="100" step="0.1" />
+              </div>
+              <div>
+                <label class="form-label">Academic Score (0-100)</label>
+                <input type="number" id="formAcademic" class="form-input" required min="0" max="100" step="0.1" />
+              </div>
+              <div>
+                <label class="form-label">Menstrual Absence Days</label>
+                <input type="number" id="formMenstrual" class="form-input" value="0" />
+              </div>
+              <div>
+                <label class="form-label">Previous Qual. Grade</label>
+                <input type="number" id="formPrevGrade" class="form-input" step="0.1" />
+              </div>
+              <div>
+                <label class="form-label">Admission Grade</label>
+                <input type="number" id="formAdmGrade" class="form-input" step="0.1" />
+              </div>
+              <div class="md:col-span-2">
+                <label class="form-label">Course / Stream</label>
+                <input type="text" id="formCourse" class="form-input" placeholder="e.g. Science" />
+              </div>
+              <div>
+                <label class="form-label">Application Mode</label>
+                <select id="formAppMode" class="form-input">
+                  <option value="online">Online</option>
+                  <option value="offline">Offline</option>
+                </select>
+              </div>
             </div>
           </div>
 
-          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <label class="form-label">Menstrual-Related Absence Days</label>
-              <input type="number" id="formMenstrual" class="form-input" min="0" max="30" placeholder="e.g. 3" required />
-            </div>
-            <div>
-              <label class="form-label">Parent Income Band</label>
-              <select id="formIncome" class="form-input" required>
-                <option value="high">High</option>
-                <option value="medium">Medium</option>
-                <option value="low" selected>Low</option>
-                <option value="below_poverty">Below Poverty Line</option>
-              </select>
+          <!-- Section 3: Socio-Economic Factors -->
+          <div class="space-y-4">
+            <h4 class="text-sm font-bold text-navy uppercase tracking-wider flex items-center gap-2">
+              <span class="w-6 h-6 rounded-lg bg-navy/10 flex items-center justify-center">${ICONS.shield}</span>
+              Socio-Economic Factors
+            </h4>
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+              <div class="md:col-span-2">
+                <label class="form-label">Parent Income Band</label>
+                <select id="formIncome" class="form-input">
+                  <option value="high">High</option>
+                  <option value="medium">Medium</option>
+                  <option value="low" selected>Low</option>
+                  <option value="below_poverty">Below Poverty Line</option>
+                </select>
+              </div>
+              <div>
+                <label class="form-label">Debtor</label>
+                <select id="formDebtor" class="form-input">
+                  <option value="0">No</option>
+                  <option value="1">Yes</option>
+                </select>
+              </div>
+              <div>
+                <label class="form-label">Scholarship</label>
+                <select id="formScholarship" class="form-input">
+                  <option value="0">No</option>
+                  <option value="1">Yes</option>
+                </select>
+              </div>
+              <div>
+                <label class="form-label">Unemployment Rate</label>
+                <input type="number" id="formUnemp" class="form-input" step="0.1" value="7.5" />
+              </div>
+              <div>
+                <label class="form-label">Inflation Rate</label>
+                <input type="number" id="formInf" class="form-input" step="0.1" value="5.2" />
+              </div>
+              <div>
+                <label class="form-label">GDP</label>
+                <input type="number" id="formGdp" class="form-input" step="0.1" value="2500" />
+              </div>
+              <div>
+                <label class="form-label">Fees Up to Date</label>
+                <select id="formFees" class="form-input">
+                  <option value="1">Yes</option>
+                  <option value="0">No</option>
+                </select>
+              </div>
             </div>
           </div>
 
-          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <label class="form-label">Migration Risk</label>
-              <select id="formMigration" class="form-input" required>
-                <option value="0">No</option>
-                <option value="1">Yes</option>
-              </select>
-            </div>
-            <div>
-              <label class="form-label">Child Marriage Risk Flag</label>
-              <select id="formMarriage" class="form-input" required>
-                <option value="0">No</option>
-                <option value="1">Yes</option>
-              </select>
+          <!-- Section 4: Risk-Specific Flags -->
+          <div class="space-y-4 p-4 bg-red-50/50 rounded-xl border border-red-100">
+            <h4 class="text-sm font-bold text-red-700 uppercase tracking-wider flex items-center gap-2">
+              <span class="w-6 h-6 rounded-lg bg-red-100 flex items-center justify-center text-red-600">${ICONS.alert}</span>
+              Vulnerability & Risk Flags
+            </h4>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div>
+                <label class="form-label">Migration Risk</label>
+                <select id="formMigration" class="form-input">
+                  <option value="0">No</option>
+                  <option value="1">Yes</option>
+                </select>
+              </div>
+              <div>
+                <label class="form-label">Child Marriage Risk</label>
+                <select id="formMarriage" class="form-input">
+                  <option value="0">No</option>
+                  <option value="1">Yes</option>
+                </select>
+              </div>
+              <div>
+                <label class="form-label">Eve Teasing Issues</label>
+                <select id="formEve" class="form-input">
+                  <option value="0">No</option>
+                  <option value="1">Yes</option>
+                </select>
+              </div>
+              <div>
+                <label class="form-label">Abuse Risk</label>
+                <select id="formAbuse" class="form-input">
+                  <option value="0">No</option>
+                  <option value="1">Yes</option>
+                </select>
+              </div>
+              <div>
+                <label class="form-label">School Distance (km)</label>
+                <input type="number" id="formDist" class="form-input" step="0.1" placeholder="e.g. 2.5" />
+              </div>
+              <div>
+                <label class="form-label">Age-Grade Mismatch</label>
+                <select id="formMismatch" class="form-input">
+                  <option value="0">No</option>
+                  <option value="1">Yes</option>
+                </select>
+              </div>
             </div>
           </div>
 
           <div>
-            <label class="form-label">Remarks (optional)</label>
-            <textarea id="formRemarks" class="form-input" rows="2" placeholder="Any additional observations..."></textarea>
+            <label class="form-label">Health & Institutional Remarks</label>
+            <textarea id="formRemarks" class="form-input" rows="3" placeholder="Enter health conditions or institution issues..."></textarea>
           </div>
 
-          <button type="submit" class="btn-primary w-full py-3">
-            🧠 Run AI Prediction & Submit
+          <button type="submit" class="btn-primary w-full py-4 text-lg shadow-xl shadow-navy/20">
+            🧠 AI Logic: Calculate Risk & Synchronize
           </button>
         </form>
 
-        <!-- Result -->
-        <div id="predictionResult" class="hidden mt-6"></div>
+        <div id="predictionResult" class="hidden mt-8"></div>
       </div>
     </div>
   `;
@@ -522,19 +671,42 @@ function renderAddForm(content, user) {
     document.getElementById('addForm').addEventListener('submit', async (e) => {
         e.preventDefault();
         const resultDiv = document.getElementById('predictionResult');
-        resultDiv.className = 'mt-6';
-        resultDiv.innerHTML = '<div class="text-center py-4"><div class="w-8 h-8 border-3 border-saffron border-t-transparent rounded-full animate-spin mx-auto"></div><p class="text-sm text-slate-400 mt-2">Running AI prediction...</p></div>';
+        resultDiv.className = 'mt-8';
+        resultDiv.innerHTML = '<div class="text-center py-6"><div class="w-10 h-10 border-4 border-saffron border-t-transparent rounded-full animate-spin mx-auto"></div><p class="text-sm text-slate-400 mt-3 font-medium">SHIKSHA SHIELD AI ENGINE: CROSS-REFERENCING 40+ DATA POINTS...</p></div>';
 
         const payload = {
             student_id: document.getElementById('formStudentId').value || undefined,
-            name: document.getElementById('formName').value || 'New Student',
-            school_id: user.school_id || 1,
+            name: document.getElementById('formName').value,
+            gender: document.getElementById('formGender').value,
+            marital_status: document.getElementById('formMarital').value,
+            age_at_enrollment: parseInt(document.getElementById('formAge').value || 0),
+            sibling_count: parseInt(document.getElementById('formSiblings').value || 0),
+            nacionality: document.getElementById('formNacionality').value,
+            displaced: parseInt(document.getElementById('formDisplaced').value),
+            educational_special_needs: parseInt(document.getElementById('formNeeds').value),
+            class: parseInt(document.getElementById('formClass').value),
             attendance: parseFloat(document.getElementById('formAttendance').value),
             academic_score: parseFloat(document.getElementById('formAcademic').value),
             menstrual_absence: parseInt(document.getElementById('formMenstrual').value),
+            prev_qualification_grade: parseFloat(document.getElementById('formPrevGrade').value || 0),
+            admission_grade: parseFloat(document.getElementById('formAdmGrade').value || 0),
+            course: document.getElementById('formCourse').value,
+            application_mode: document.getElementById('formAppMode').value,
             income_band: document.getElementById('formIncome').value,
+            debtor: parseInt(document.getElementById('formDebtor').value),
+            scholarship_holder: parseInt(document.getElementById('formScholarship').value),
+            unemployment_rate: parseFloat(document.getElementById('formUnemp').value),
+            inflation_rate: parseFloat(document.getElementById('formInf').value),
+            gdp: parseFloat(document.getElementById('formGdp').value),
+            tuition_fees_up_to_date: parseInt(document.getElementById('formFees').value),
             migration_flag: parseInt(document.getElementById('formMigration').value),
             marriage_risk_flag: parseInt(document.getElementById('formMarriage').value),
+            eve_teasing: parseInt(document.getElementById('formEve').value),
+            abuse: parseInt(document.getElementById('formAbuse').value),
+            school_distance: parseFloat(document.getElementById('formDist').value || 0),
+            age_grade_mismatch: parseInt(document.getElementById('formMismatch').value),
+            remarks: document.getElementById('formRemarks').value,
+            school_id: user.school_id || 1
         };
 
         try {
@@ -542,35 +714,37 @@ function renderAddForm(content, user) {
             const result = await api(endpoint, { method: 'POST', body: payload });
 
             resultDiv.innerHTML = `
-        <div class="p-5 rounded-xl border-2 ${result.risk_category === 'Critical' ? 'border-red-300 bg-red-50' :
+        <div class="p-6 rounded-2xl border-2 animate-fade-in ${result.risk_category === 'Critical' ? 'border-red-300 bg-red-50' :
                     result.risk_category === 'High' ? 'border-orange-300 bg-orange-50' :
                         result.risk_category === 'Moderate' ? 'border-yellow-300 bg-yellow-50' :
                             'border-green-300 bg-green-50'
                 }">
-          <div class="flex items-center justify-between mb-3">
-            <h4 class="font-bold text-slate-800">AI Prediction Result</h4>
+          <div class="flex items-center justify-between mb-4">
+            <h4 class="font-bold text-slate-800 text-lg">AI Comprehensive Prediction</h4>
             ${riskBadge(result.risk_category)}
           </div>
-          <div class="grid grid-cols-3 gap-4 mb-3">
-            <div class="text-center">
-              <p class="text-3xl font-black text-slate-800">${result.risk_score}</p>
-              <p class="text-xs text-slate-500">Risk Score</p>
+          <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
+            <div class="text-center p-4 bg-white rounded-xl shadow-sm">
+              <p class="text-4xl font-black text-slate-800">${result.risk_score}</p>
+              <p class="text-xs text-slate-500 uppercase tracking-widest mt-1 font-bold">Total Risk Index</p>
             </div>
-            <div class="text-center">
-              <p class="text-lg font-bold text-slate-700">${result.risk_category}</p>
-              <p class="text-xs text-slate-500">Category</p>
+            <div class="text-center p-4 bg-white rounded-xl shadow-sm">
+              <p class="text-xl font-bold text-slate-700">${result.risk_category}</p>
+              <p class="text-xs text-slate-500 uppercase tracking-widest mt-1 font-bold">Risk Stratum</p>
             </div>
-            <div class="text-center">
-              <p class="text-sm font-bold text-slate-700">${result.cause}</p>
-              <p class="text-xs text-slate-500">Primary Cause</p>
+            <div class="text-center p-4 bg-white rounded-xl shadow-sm">
+              <p class="text-sm font-bold text-navy">${result.cause}</p>
+              <p class="text-xs text-slate-500 uppercase tracking-widest mt-1 font-bold">Primary Propensity</p>
             </div>
           </div>
-          <p class="text-sm text-slate-600">${result.explanation || ''}</p>
-          ${result.student_uid ? `<p class="text-xs text-slate-400 mt-2">New student ID: ${result.student_uid}</p>` : ''}
+          <div class="bg-white/60 p-4 rounded-xl">
+             <p class="text-sm text-slate-700 leading-relaxed font-medium">🎯 <span class="ml-1">${result.explanation || ''}</span></p>
+          </div>
+          ${result.student_uid ? `<p class="text-xs text-slate-400 mt-4 font-mono">NEW SYSTEM ENTRY RECORDED: ${result.student_uid}</p>` : ''}
         </div>
       `;
         } catch (err) {
-            resultDiv.innerHTML = `<div class="p-4 bg-red-50 rounded-lg text-red-600 text-sm">Error: ${err.message}</div>`;
+            resultDiv.innerHTML = `<div class="p-4 bg-red-50 rounded-lg text-red-600 text-sm border border-red-200">System Error: ${err.message}</div>`;
         }
     });
 }
