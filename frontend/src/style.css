@@ -182,6 +182,45 @@ body {
   animation: slideIn 0.3s ease forwards;
 }
 
+/* ─── AI Chatbot Animations & Utils ─────────────────────── */
+@keyframes bounce-slow {
+
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+
+  50% {
+    transform: translateY(-10px);
+  }
+}
+
+.animate-bounce-slow {
+  animation: bounce-slow 3s infinite ease-in-out;
+}
+
+#chat-messages::-webkit-scrollbar {
+  width: 4px;
+}
+
+#chat-messages::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+#chat-messages::-webkit-scrollbar-thumb {
+  background: var(--color-slate-300);
+  border-radius: 10px;
+}
+
+.gradient-navy {
+  background: linear-gradient(135deg, #0A192F 0%, #1a365d 100%);
+}
+
+.gradient-saffron {
+  background: linear-gradient(135deg, #FF9933 0%, #FF6600 100%);
+}
+
+
 /* ─── Notification Bell ─────────────────────────────────── */
 .notification-badge {
   position: absolute;

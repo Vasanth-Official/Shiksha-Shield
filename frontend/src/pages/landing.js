@@ -91,7 +91,7 @@ export function renderLanding(container) {
           <div class="grid grid-cols-1 md:grid-cols-4 gap-8 items-center">
             <div class="md:col-span-1">
               <p class="text-white/60 text-sm font-semibold uppercase tracking-wider mb-1">Simulated Study</p>
-              <p class="text-white text-lg font-bold">1,000 Students</p>
+              <p class="text-white text-lg font-bold">50 Students</p>
             </div>
             <div class="text-center">
               <p class="text-white/60 text-xs font-semibold uppercase tracking-wider mb-1">Baseline Dropout</p>
@@ -164,4 +164,135 @@ export function renderLanding(container) {
     e.preventDefault();
     document.getElementById('impactSection')?.scrollIntoView({ behavior: 'smooth' });
   });
+
+  // Initialize AI Chatbot
+  initChatbot(container);
+}
+
+function initChatbot(container) {
+  const chatHtml = `
+    <div id="shiksha-chatbot" class="fixed bottom-6 right-6 z-[9999] flex flex-col items-end">
+      <!-- Chat Window -->
+      <div id="chat-window" class="hidden w-80 md:w-96 bg-white rounded-2xl shadow-2xl border border-slate-200 flex flex-col overflow-hidden mb-4 transition-all duration-300 scale-95 opacity-0 origin-bottom-right">
+        <!-- Header -->
+        <div class="gradient-navy p-4 text-white flex items-center justify-between">
+          <div class="flex items-center gap-3">
+            <div class="w-10 h-10 rounded-full bg-white/20 flex items-center justify-center text-xl">🛡️</div>
+            <div>
+              <p class="font-bold text-sm">Ankita</p>
+              <p class="text-[10px] text-white/70">AI Student Counselor</p>
+            </div>
+          </div>
+          <button id="close-chat" class="p-1 hover:bg-white/10 rounded-full">✕</button>
+        </div>
+        
+        <!-- Messages -->
+        <div id="chat-messages" class="flex-1 h-96 overflow-y-auto p-4 space-y-4 bg-slate-50">
+          <div class="flex gap-2">
+            <div class="w-8 h-8 rounded-full gradient-saffron flex items-center justify-center text-xs shrink-0">AI</div>
+            <div class="bg-white p-3 rounded-2xl rounded-tl-none shadow-sm text-sm text-slate-700">
+              Namaste! I am Ankita. How are you feeling today? If you're facing any challenges with school, I'm here to listen and help.
+            </div>
+          </div>
+        </div>
+        
+        <!-- Input -->
+        <div class="p-4 bg-white border-t border-slate-100">
+          <form id="chat-form" class="flex gap-2">
+            <input type="text" id="chat-input" class="form-input text-sm py-2" placeholder="Type your message..." required />
+            <button type="submit" class="p-2 gradient-navy text-white rounded-xl hover:scale-105 transition-transform flex items-center justify-center">
+              <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 2L11 13M22 2l-7 20-4-9-9-4 20-7z"/></svg>
+            </button>
+          </form>
+        </div>
+      </div>
+      
+      <!-- Toggle Button -->
+      <button id="toggle-chat" class="w-14 h-14 rounded-full gradient-saffron text-white shadow-xl flex items-center justify-center text-2xl hover:scale-110 active:scale-95 transition-all animate-bounce-slow">
+        💬
+      </button>
+    </div>
+  `;
+
+  const div = document.createElement('div');
+  div.innerHTML = chatHtml;
+  container.appendChild(div.firstElementChild);
+
+  const toggleBtn = document.getElementById('toggle-chat');
+  const chatWin = document.getElementById('chat-window');
+  const closeBtn = document.getElementById('close-chat');
+  const chatForm = document.getElementById('chat-form');
+  const chatInput = document.getElementById('chat-input');
+  const chatMsgs = document.getElementById('chat-messages');
+
+  let chatHistory = [];
+
+  toggleBtn.onclick = () => {
+    chatWin.classList.toggle('hidden');
+    setTimeout(() => {
+      chatWin.classList.toggle('scale-100');
+      chatWin.classList.toggle('opacity-100');
+    }, 10);
+  };
+
+  closeBtn.onclick = () => {
+    chatWin.classList.remove('scale-100', 'opacity-100');
+    setTimeout(() => chatWin.classList.add('hidden'), 300);
+  };
+
+  chatForm.onsubmit = async (e) => {
+    e.preventDefault();
+    const text = chatInput.value.trim();
+    if (!text) return;
+
+    // Add user message
+    addMessage('user', text);
+    chatInput.value = '';
+
+    // Loading state
+    const loadingId = 'loading-' + Date.now();
+    addMessage('ai', 'Thinking...', loadingId);
+
+    try {
+      const response = await api('/chat', {
+        method: 'POST',
+        body: { message: text, history: chatHistory }
+      });
+
+      // Remove loading
+      document.getElementById(loadingId)?.parentElement?.parentElement?.remove();
+
+      if (response.reply) {
+        addMessage('ai', response.reply);
+        chatHistory.push({ role: 'user', text: text });
+        chatHistory.push({ role: 'ai', text: response.reply });
+        // Keep history manageable
+        if (chatHistory.length > 20) chatHistory = chatHistory.slice(-20);
+      } else {
+        addMessage('ai', "I'm sorry, I am having a little trouble connecting. Can you try again?");
+      }
+    } catch (err) {
+      document.getElementById(loadingId)?.parentElement?.parentElement?.remove();
+      addMessage('ai', "I apologize, but I am offline right now. Please try again later.");
+    }
+  };
+
+  function addMessage(role, text, id = null) {
+    const msgDiv = document.createElement('div');
+    msgDiv.className = 'flex gap-2' + (role === 'user' ? ' justify-end' : '');
+
+    msgDiv.innerHTML = role === 'ai' ? `
+      <div class="w-8 h-8 rounded-full gradient-saffron flex items-center justify-center text-xs shrink-0">AI</div>
+      <div ${id ? `id="${id}"` : ''} class="bg-white p-3 rounded-2xl rounded-tl-none shadow-sm text-sm text-slate-700 whitespace-pre-wrap">
+        ${text}
+      </div>
+    ` : `
+      <div class="bg-navy text-white p-3 rounded-2xl rounded-tr-none shadow-sm text-sm whitespace-pre-wrap max-w-[80%]">
+        ${text}
+      </div>
+    `;
+
+    chatMsgs.appendChild(msgDiv);
+    chatMsgs.scrollTop = chatMsgs.scrollHeight;
+  }
 }

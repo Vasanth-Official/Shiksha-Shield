@@ -241,18 +241,23 @@ function renderStudentRows(students) {
     <tr>
       <td class="font-mono text-xs text-slate-500">${s.student_uid}</td>
       <td class="font-medium">${s.name}</td>
-      <td>${s.class}</td>
-      <td><span class="${s.attendance < 70 ? 'text-red-500 font-semibold' : ''}">${s.attendance}%</span></td>
-      <td>${s.academic_score}</td>
-      <td><span class="font-bold">${s.risk_score}</span></td>
+      <td class="text-center">${s.class}</td>
+      <td class="text-center"><span class="${s.attendance < 70 ? 'text-red-500 font-semibold' : ''}">${s.attendance}%</span></td>
+      <td class="text-center">${s.academic_score}</td>
+      <td class="text-center"><span class="font-bold">${s.risk_score}</span></td>
       <td>${riskBadge(s.risk_category)}</td>
-      <td class="text-sm">${s.cause}</td>
+      <td class="text-sm">${s.risk_category === 'Low' ? '<span class="text-slate-300">—</span>' : s.cause}</td>
       <td>
-        <div class="flex gap-1">
+        <div class="flex gap-1 justify-center">
           <button class="btn-outline py-1.5 px-2.5 text-xs view-btn" data-id="${s.id}" title="View Details">
             ${ICONS.eye} 
           </button>
-          <button class="btn-outline py-1.5 px-2.5 text-xs intervention-btn" data-id="${s.id}" data-cause="${s.cause}" data-name="${s.name}" title="Interventions">
+          <button class="btn-outline py-1.5 px-2.5 text-xs intervention-btn" 
+            data-id="${s.id}" 
+            data-cause="${s.cause}" 
+            data-risk="${s.risk_category}" 
+            data-name="${s.name}" 
+            title="Interventions">
             ${ICONS.intervention}
           </button>
         </div>
@@ -266,7 +271,12 @@ function attachRowActions(students) {
     btn.addEventListener('click', () => showExplainModal(btn.dataset.id));
   });
   document.querySelectorAll('.intervention-btn').forEach(btn => {
-    btn.addEventListener('click', () => showInterventionModal(btn.dataset.id, btn.dataset.cause, btn.dataset.name));
+    btn.addEventListener('click', () => showInterventionModal(
+      btn.dataset.id,
+      btn.dataset.cause,
+      btn.dataset.name,
+      btn.dataset.risk
+    ));
   });
 }
 
@@ -312,6 +322,7 @@ async function showExplainModal(studentId) {
           <p class="text-sm text-amber-700">${data.explanation}</p>
         </div>
 
+        ${data.risk_category !== 'Low' ? `
         <div>
           <p class="font-semibold text-slate-700 text-sm mb-3">Top 3 Contributing Factors</p>
           <div class="space-y-2">
@@ -331,6 +342,7 @@ async function showExplainModal(studentId) {
             `).join('')}
           </div>
         </div>
+        ` : ''}
       </div>
     `;
   } catch (err) {
@@ -338,7 +350,7 @@ async function showExplainModal(studentId) {
   }
 }
 
-async function showInterventionModal(studentId, cause, name) {
+async function showInterventionModal(studentId, cause, name, riskCategory) {
   const overlay = document.createElement('div');
   overlay.className = 'modal-overlay';
   overlay.innerHTML = `
@@ -364,8 +376,10 @@ async function showInterventionModal(studentId, cause, name) {
         <div class="p-3 bg-slate-50 rounded-lg">
           <span class="text-sm text-slate-500">Student:</span>
           <span class="font-semibold text-slate-800 ml-2">${name}</span>
-          <span class="ml-3 text-sm text-slate-500">Cause:</span>
-          <span class="font-semibold text-saffron ml-2">${cause}</span>
+          ${riskCategory !== 'Low' ? `
+            <span class="ml-3 text-sm text-slate-500">Cause:</span>
+            <span class="font-semibold text-saffron ml-2">${cause}</span>
+          ` : ''}
         </div>
 
         <div>
@@ -456,12 +470,13 @@ function renderAddForm(content, user) {
             </h4>
             <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div>
-                <label class="form-label">Student ID (Internal)</label>
-                <input type="number" id="formStudentId" class="form-input" placeholder="Update only" />
+                <label class="form-label text-saffron">Update Existing? (Student ID)</label>
+                <input type="number" id="formStudentId" class="form-input border-saffron/30" placeholder="Enter ID only to update" />
+                <p class="text-[10px] text-slate-400 mt-1">Leave blank for NEW registration</p>
               </div>
-              <div>
-                <label class="form-label">Student Name</label>
-                <input type="text" id="formName" class="form-input" required placeholder="Full Name" />
+              <div class="md:col-span-2">
+                <label class="form-label font-bold">New Student Name</label>
+                <input type="text" id="formName" class="form-input" required placeholder="Full Name of the student" />
               </div>
               <div>
                 <label class="form-label">Age at Enrollment</label>
@@ -702,16 +717,35 @@ function renderAddForm(content, user) {
               <p class="text-xs text-slate-500 uppercase tracking-widest mt-1 font-bold">Risk Stratum</p>
             </div>
             <div class="text-center p-4 bg-white rounded-xl shadow-sm">
-              <p class="text-sm font-bold text-navy">${result.cause}</p>
+              <p class="text-sm font-bold text-navy">${result.risk_category === 'Low' ? 'N/A' : result.cause}</p>
               <p class="text-xs text-slate-500 uppercase tracking-widest mt-1 font-bold">Primary Propensity</p>
             </div>
           </div>
           <div class="bg-white/60 p-4 rounded-xl">
              <p class="text-sm text-slate-700 leading-relaxed font-medium">🎯 <span class="ml-1">${result.explanation || ''}</span></p>
           </div>
-          ${result.student_uid ? `<p class="text-xs text-slate-400 mt-4 font-mono">NEW SYSTEM ENTRY RECORDED: ${result.student_uid}</p>` : ''}
+          ${result.student_uid ? `
+            <p class="text-xs text-slate-400 mt-4 font-mono">NEW SYSTEM ENTRY RECORDED: ${result.student_uid}</p>
+            <div class="mt-4 flex justify-center">
+              <button id="backToOverview" class="btn-primary py-2 px-6 shadow-lg hover:scale-105 transition-transform">
+                Return to Overview & Refresh Totals
+              </button>
+            </div>
+          ` : ''}
         </div>
       `;
+
+      if (result.student_uid) {
+        document.getElementById('backToOverview')?.addEventListener('click', () => {
+          // Trigger the 'overview' nav click to force re-fetch
+          const overviewBtn = document.querySelector('[data-nav="overview"]');
+          if (overviewBtn) {
+            overviewBtn.click();
+          } else {
+            window.location.reload();
+          }
+        });
+      }
     } catch (err) {
       resultDiv.innerHTML = `<div class="p-4 bg-red-50 rounded-lg text-red-600 text-sm border border-red-200">System Error: ${err.message}</div>`;
     }
