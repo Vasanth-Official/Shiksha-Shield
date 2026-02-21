@@ -4,7 +4,7 @@
 import { navigate } from '../main.js';
 
 export function renderLanding(container) {
-    container.innerHTML = `
+  container.innerHTML = `
     <!-- Navbar -->
     <nav class="fixed top-0 left-0 right-0 z-50 bg-white/90 backdrop-blur-md border-b border-slate-200/50">
       <div class="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
@@ -23,12 +23,6 @@ export function renderLanding(container) {
 
     <!-- Hero Section -->
     <section class="gradient-hero min-h-screen flex items-center relative overflow-hidden pt-16">
-      <!-- Background pattern -->
-      <div class="absolute inset-0 opacity-5">
-        <div class="absolute top-20 left-10 w-72 h-72 bg-saffron rounded-full blur-3xl"></div>
-        <div class="absolute bottom-20 right-10 w-96 h-96 bg-blue-400 rounded-full blur-3xl"></div>
-      </div>
-
       <div class="max-w-7xl mx-auto px-6 py-24 relative z-10">
         <div class="max-w-3xl">
           <div class="inline-flex items-center gap-2 bg-white/10 border border-white/20 rounded-full px-4 py-2 mb-8">
@@ -126,11 +120,11 @@ export function renderLanding(container) {
 
         <div class="grid grid-cols-1 md:grid-cols-4 gap-6">
           ${[
-            { num: '01', title: 'Data Collection', desc: 'Teachers input attendance, academic, health, and socio-economic indicators monthly.', color: 'from-blue-500 to-blue-600' },
-            { num: '02', title: 'AI Analysis', desc: 'Our risk engine processes multi-factor data to generate predictive risk scores (0–100).', color: 'from-[#FF9933] to-[#FF6600]' },
-            { num: '03', title: 'Smart Alerts', desc: 'Real-time notifications for high-risk cases with cause classification and explanations.', color: 'from-red-500 to-red-600' },
-            { num: '04', title: 'Intervention', desc: 'AI-recommended schemes and actions matched to specific risk causes for each student.', color: 'from-emerald-500 to-emerald-600' },
-        ].map(s => `
+      { num: '01', title: 'Data Collection', desc: 'Teachers input attendance, academic, health, and socio-economic indicators monthly.', color: 'from-blue-500 to-blue-600' },
+      { num: '02', title: 'AI Analysis', desc: 'Our risk engine processes multi-factor data to generate predictive risk scores (0–100).', color: 'from-[#FF9933] to-[#FF6600]' },
+      { num: '03', title: 'Smart Alerts', desc: 'Real-time notifications for high-risk cases with cause classification and explanations.', color: 'from-red-500 to-red-600' },
+      { num: '04', title: 'Intervention', desc: 'AI-recommended schemes and actions matched to specific risk causes for each student.', color: 'from-emerald-500 to-emerald-600' },
+    ].map(s => `
             <div class="card p-6 animate-fade-in">
               <div class="w-10 h-10 rounded-xl bg-gradient-to-br ${s.color} flex items-center justify-center text-white font-bold text-sm mb-4">${s.num}</div>
               <h3 class="font-bold text-navy text-lg mb-2">${s.title}</h3>
@@ -159,15 +153,15 @@ export function renderLanding(container) {
     </footer>
   `;
 
-    // Event listeners
-    document.getElementById('loginNavBtn')?.addEventListener('click', () => navigate('login'));
-    document.getElementById('heroCTA')?.addEventListener('click', () => navigate('login'));
-    document.getElementById('footerCTA')?.addEventListener('click', () => navigate('login'));
-    document.getElementById('learnMore')?.addEventListener('click', () => {
-        document.getElementById('impactSection')?.scrollIntoView({ behavior: 'smooth' });
-    });
-    document.getElementById('aboutLink')?.addEventListener('click', (e) => {
-        e.preventDefault();
-        document.getElementById('impactSection')?.scrollIntoView({ behavior: 'smooth' });
-    });
+  // Event listeners
+  document.getElementById('loginNavBtn')?.addEventListener('click', () => navigate('login'));
+  document.getElementById('heroCTA')?.addEventListener('click', () => navigate('login'));
+  document.getElementById('footerCTA')?.addEventListener('click', () => navigate('login'));
+  document.getElementById('learnMore')?.addEventListener('click', () => {
+    document.getElementById('impactSection')?.scrollIntoView({ behavior: 'smooth' });
+  });
+  document.getElementById('aboutLink')?.addEventListener('click', (e) => {
+    e.preventDefault();
+    document.getElementById('impactSection')?.scrollIntoView({ behavior: 'smooth' });
+  });
 }

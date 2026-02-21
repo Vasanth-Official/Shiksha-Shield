@@ -4,14 +4,8 @@
 import { api, setUser, navigate } from '../main.js';
 
 export function renderLogin(container) {
-    container.innerHTML = `
+  container.innerHTML = `
     <div class="min-h-screen gradient-hero flex items-center justify-center p-4 relative overflow-hidden">
-      <!-- Background effects -->
-      <div class="absolute inset-0 opacity-10">
-        <div class="absolute top-1/4 left-1/4 w-64 h-64 bg-saffron rounded-full blur-3xl"></div>
-        <div class="absolute bottom-1/4 right-1/4 w-80 h-80 bg-blue-400 rounded-full blur-3xl"></div>
-      </div>
-
       <div class="w-full max-w-md relative z-10">
         <!-- Header -->
         <div class="text-center mb-8">
@@ -62,11 +56,11 @@ export function renderLogin(container) {
             <p class="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-3">Demo Credentials</p>
             <div class="space-y-2">
               ${[
-            { user: 'teacher1', role: 'Teacher', label: 'teacher' },
-            { user: 'schooladmin1', role: 'School Admin', label: 'school_admin' },
-            { user: 'district1', role: 'District Officer', label: 'district_officer' },
-            { user: 'state1', role: 'State Officer', label: 'state_officer' },
-        ].map(c => `
+      { user: 'teacher1', role: 'Teacher', label: 'teacher' },
+      { user: 'schooladmin1', role: 'School Admin', label: 'school_admin' },
+      { user: 'district1', role: 'District Officer', label: 'district_officer' },
+      { user: 'state1', role: 'State Officer', label: 'state_officer' },
+    ].map(c => `
                 <button class="demo-cred w-full flex items-center justify-between p-2.5 rounded-lg hover:bg-white border border-transparent hover:border-slate-200 transition-all text-left" data-user="${c.user}" data-role="${c.label}">
                   <div>
                     <span class="text-sm font-medium text-slate-700">${c.role}</span>
@@ -88,41 +82,41 @@ export function renderLogin(container) {
     </div>
   `;
 
-    // Demo credential auto-fill
-    container.querySelectorAll('.demo-cred').forEach(btn => {
-        btn.addEventListener('click', () => {
-            document.getElementById('username').value = btn.dataset.user;
-            document.getElementById('password').value = 'demo123';
-            document.getElementById('roleSelect').value = btn.dataset.role;
-        });
+  // Demo credential auto-fill
+  container.querySelectorAll('.demo-cred').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.getElementById('username').value = btn.dataset.user;
+      document.getElementById('password').value = 'demo123';
+      document.getElementById('roleSelect').value = btn.dataset.role;
     });
+  });
 
-    // Login form
-    document.getElementById('loginForm').addEventListener('submit', async (e) => {
-        e.preventDefault();
-        const errorEl = document.getElementById('loginError');
-        errorEl.classList.add('hidden');
+  // Login form
+  document.getElementById('loginForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const errorEl = document.getElementById('loginError');
+    errorEl.classList.add('hidden');
 
-        const username = document.getElementById('username').value;
-        const password = document.getElementById('password').value;
+    const username = document.getElementById('username').value;
+    const password = document.getElementById('password').value;
 
-        try {
-            const res = await api('/auth/login', {
-                method: 'POST',
-                body: { username, password }
-            });
+    try {
+      const res = await api('/auth/login', {
+        method: 'POST',
+        body: { username, password }
+      });
 
-            if (res.success) {
-                setUser(res.user);
-            } else {
-                errorEl.textContent = res.message || 'Invalid credentials. Please try again.';
-                errorEl.classList.remove('hidden');
-            }
-        } catch (err) {
-            errorEl.textContent = 'Connection error. Please ensure the backend server is running.';
-            errorEl.classList.remove('hidden');
-        }
-    });
+      if (res.success) {
+        setUser(res.user);
+      } else {
+        errorEl.textContent = res.message || 'Invalid credentials. Please try again.';
+        errorEl.classList.remove('hidden');
+      }
+    } catch (err) {
+      errorEl.textContent = 'Connection error. Please ensure the backend server is running.';
+      errorEl.classList.remove('hidden');
+    }
+  });
 
-    document.getElementById('backToLanding').addEventListener('click', () => navigate('landing'));
+  document.getElementById('backToLanding').addEventListener('click', () => navigate('landing'));
 }

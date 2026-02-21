@@ -62,6 +62,21 @@ export function navigate(page) {
 
 function render() {
     const app = document.getElementById('app');
+
+    // Reset and Apply Background Classes
+    app.className = 'bg-blend-page';
+    const bgMap = {
+        'landing': 'bg-home',
+        'login': 'bg-login',
+        'teacher': 'bg-teacher',
+        'district': 'bg-district',
+        'state': 'bg-state',
+        'school-admin': 'bg-home' // Defaulting to home for school admin
+    };
+    if (bgMap[state.currentPage]) {
+        app.classList.add(bgMap[state.currentPage]);
+    }
+
     app.innerHTML = '';
 
     switch (state.currentPage) {
