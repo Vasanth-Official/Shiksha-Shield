@@ -182,7 +182,7 @@ body {
   animation: slideIn 0.3s ease forwards;
 }
 
-/* ─── AI Chatbot Animations & Utils ─────────────────────── */
+/* ─── WhatsApp-style AI Chatbot ────────────────────────── */
 @keyframes bounce-slow {
 
   0%,
@@ -199,17 +199,104 @@ body {
   animation: bounce-slow 3s infinite ease-in-out;
 }
 
-#chat-messages::-webkit-scrollbar {
-  width: 4px;
+#chat-messages {
+  background-image: url('https://user-images.githubusercontent.com/15075759/28719144-86dc0f70-73b1-11e7-911d-60d70fcded21.png');
+  background-repeat: repeat;
+  background-attachment: local;
+  background-color: #e5ddd5;
 }
 
-#chat-messages::-webkit-scrollbar-track {
-  background: transparent;
+#chat-messages::-webkit-scrollbar {
+  width: 5px;
 }
 
 #chat-messages::-webkit-scrollbar-thumb {
-  background: var(--color-slate-300);
+  background: rgba(0, 0, 0, 0.2);
   border-radius: 10px;
+}
+
+.chat-header-whatsapp {
+  background-color: #075e54;
+  color: white;
+}
+
+.bubble-wa {
+  position: relative;
+  max-width: 85%;
+  padding: 8px 12px;
+  border-radius: 8px;
+  font-size: 14px;
+  line-height: 1.4;
+  box-shadow: 0 1px 0.5px rgba(0, 0, 0, 0.13);
+  margin-bottom: 2px;
+}
+
+.bubble-ai {
+  background-color: white;
+  align-self: flex-start;
+  border-top-left-radius: 0;
+}
+
+.bubble-ai::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: -8px;
+  width: 0;
+  height: 0;
+  border-style: solid;
+  border-width: 0 10px 10px 0;
+  border-color: transparent white transparent transparent;
+}
+
+.bubble-user {
+  background-color: #dcf8c6;
+  align-self: flex-end;
+  border-top-right-radius: 0;
+}
+
+.bubble-user::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  right: -8px;
+  width: 0;
+  height: 0;
+  border-style: solid;
+  border-width: 10px 10px 0 0;
+  border-color: #dcf8c6 transparent transparent transparent;
+}
+
+.typing-dot {
+  width: 6px;
+  height: 6px;
+  background-color: #999;
+  border-radius: 50%;
+  display: inline-block;
+  margin: 0 1px;
+  animation: typing 1s infinite ease-in-out;
+}
+
+@keyframes typing {
+
+  0%,
+  100% {
+    opacity: 0.3;
+    transform: translateY(0);
+  }
+
+  50% {
+    opacity: 1;
+    transform: translateY(-3px);
+  }
+}
+
+.typing-dot:nth-child(2) {
+  animation-delay: 0.2s;
+}
+
+.typing-dot:nth-child(3) {
+  animation-delay: 0.4s;
 }
 
 .gradient-navy {

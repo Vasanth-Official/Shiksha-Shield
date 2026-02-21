@@ -1,7 +1,7 @@
 /**
  * Landing Page – Hero, Impact Stats, CTA
  */
-import { navigate } from '../main.js';
+import { navigate, api } from '../main.js';
 
 export function renderLanding(container) {
   container.innerHTML = `
@@ -173,43 +173,47 @@ function initChatbot(container) {
   const chatHtml = `
     <div id="shiksha-chatbot" class="fixed bottom-6 right-6 z-[9999] flex flex-col items-end">
       <!-- Chat Window -->
-      <div id="chat-window" class="hidden w-80 md:w-96 bg-white rounded-2xl shadow-2xl border border-slate-200 flex flex-col overflow-hidden mb-4 transition-all duration-300 scale-95 opacity-0 origin-bottom-right">
+      <div id="chat-window" class="hidden w-80 md:w-96 bg-white rounded-2xl shadow-2xl border border-slate-200 flex flex-col overflow-hidden mb-4 transition-all duration-300 scale-95 opacity-0 origin-bottom-right" style="height: 550px; max-height: 80vh">
         <!-- Header -->
-        <div class="gradient-navy p-4 text-white flex items-center justify-between">
+        <div class="chat-header-whatsapp p-3 flex items-center justify-between shrink-0 shadow-md">
           <div class="flex items-center gap-3">
-            <div class="w-10 h-10 rounded-full bg-white/20 flex items-center justify-center text-xl">🛡️</div>
+            <div class="w-10 h-10 rounded-full bg-white/20 flex items-center justify-center text-xl overflow-hidden shadow-inner">👩🏽</div>
             <div>
-              <p class="font-bold text-sm">Ankita</p>
-              <p class="text-[10px] text-white/70">AI Student Counselor</p>
+              <p class="font-bold text-sm leading-tight">Ankita</p>
+              <div class="flex items-center gap-1">
+                <span class="w-2 h-2 rounded-full bg-emerald-400"></span>
+                <p class="text-[10px] text-white/80">Online Counselor</p>
+              </div>
             </div>
           </div>
-          <button id="close-chat" class="p-1 hover:bg-white/10 rounded-full">✕</button>
+          <button id="close-chat" class="p-2 hover:bg-black/10 rounded-full transition-colors">✕</button>
         </div>
         
-        <!-- Messages -->
-        <div id="chat-messages" class="flex-1 h-96 overflow-y-auto p-4 space-y-4 bg-slate-50">
-          <div class="flex gap-2">
-            <div class="w-8 h-8 rounded-full gradient-saffron flex items-center justify-center text-xs shrink-0">AI</div>
-            <div class="bg-white p-3 rounded-2xl rounded-tl-none shadow-sm text-sm text-slate-700">
-              Namaste! I am Ankita. How are you feeling today? If you're facing any challenges with school, I'm here to listen and help.
-            </div>
+        <!-- Messages Area -->
+        <div id="chat-messages" class="flex-1 overflow-y-auto p-4 space-y-3 flex flex-col">
+          <div class="bubble-wa bubble-ai">
+            <p>Namaste! I am Ankita. 🙏</p>
+            <p class="mt-1">I am here to support you in your school journey. How are you feeling today?</p>
+            <p class="text-[9px] text-slate-400 text-right mt-1">${new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</p>
           </div>
         </div>
         
-        <!-- Input -->
-        <div class="p-4 bg-white border-t border-slate-100">
-          <form id="chat-form" class="flex gap-2">
-            <input type="text" id="chat-input" class="form-input text-sm py-2" placeholder="Type your message..." required />
-            <button type="submit" class="p-2 gradient-navy text-white rounded-xl hover:scale-105 transition-transform flex items-center justify-center">
-              <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 2L11 13M22 2l-7 20-4-9-9-4 20-7z"/></svg>
+        <!-- Input Area Area -->
+        <div class="p-3 bg-[#f0f2f5] border-t border-slate-200 shrink-0">
+          <form id="chat-form" class="flex gap-2 items-center">
+            <input type="text" id="chat-input" 
+              class="flex-1 bg-white border-none rounded-full px-4 py-2.5 text-sm shadow-sm focus:ring-2 focus:ring-[#075e54] outline-none" 
+              placeholder="Type a message..." required />
+            <button type="submit" class="w-11 h-11 bg-[#075e54] text-white rounded-full flex items-center justify-center shadow-lg hover:brightness-110 active:scale-90 transition-all shrink-0">
+              <svg viewBox="0 0 24 24" width="22" height="22" fill="currentColor"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/></svg>
             </button>
           </form>
         </div>
       </div>
       
       <!-- Toggle Button -->
-      <button id="toggle-chat" class="w-14 h-14 rounded-full gradient-saffron text-white shadow-xl flex items-center justify-center text-2xl hover:scale-110 active:scale-95 transition-all animate-bounce-slow">
-        💬
+      <button id="toggle-chat" class="w-14 h-14 rounded-full gradient-saffron text-white shadow-xl flex items-center justify-center text-3xl hover:rotate-12 active:scale-95 transition-all animate-bounce-slow">
+        <svg viewBox="0 0 24 24" width="28" height="28" fill="white"><path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2z"/></svg>
       </button>
     </div>
   `;
@@ -229,6 +233,7 @@ function initChatbot(container) {
 
   toggleBtn.onclick = () => {
     chatWin.classList.toggle('hidden');
+    chatMsgs.scrollTop = chatMsgs.scrollHeight;
     setTimeout(() => {
       chatWin.classList.toggle('scale-100');
       chatWin.classList.toggle('opacity-100');
@@ -246,12 +251,17 @@ function initChatbot(container) {
     if (!text) return;
 
     // Add user message
-    addMessage('user', text);
+    addWAMessage('user', text);
     chatInput.value = '';
 
-    // Loading state
-    const loadingId = 'loading-' + Date.now();
-    addMessage('ai', 'Thinking...', loadingId);
+    // Typing indicator
+    const typingId = 'typing-' + Date.now();
+    const typingMsg = document.createElement('div');
+    typingMsg.id = typingId;
+    typingMsg.className = 'bubble-wa bubble-ai italic text-slate-400 py-2';
+    typingMsg.innerHTML = '<span class="typing-dot"></span><span class="typing-dot"></span><span class="typing-dot"></span>';
+    chatMsgs.appendChild(typingMsg);
+    chatMsgs.scrollTop = chatMsgs.scrollHeight;
 
     try {
       const response = await api('/chat', {
@@ -259,40 +269,42 @@ function initChatbot(container) {
         body: { message: text, history: chatHistory }
       });
 
-      // Remove loading
-      document.getElementById(loadingId)?.parentElement?.parentElement?.remove();
+      // Remove typing indicator
+      document.getElementById(typingId)?.remove();
 
       if (response.reply) {
-        addMessage('ai', response.reply);
+        addWAMessage('ai', response.reply);
         chatHistory.push({ role: 'user', text: text });
         chatHistory.push({ role: 'ai', text: response.reply });
-        // Keep history manageable
         if (chatHistory.length > 20) chatHistory = chatHistory.slice(-20);
       } else {
-        addMessage('ai', "I'm sorry, I am having a little trouble connecting. Can you try again?");
+        addWAMessage('ai', "I apologize, Ankita is having trouble connecting. Please try again in few moments.");
       }
     } catch (err) {
-      document.getElementById(loadingId)?.parentElement?.parentElement?.remove();
-      addMessage('ai', "I apologize, but I am offline right now. Please try again later.");
+      document.getElementById(typingId)?.remove();
+      addWAMessage('ai', "System is busy. Please try telling me about how you're feeling after a while!");
     }
   };
 
-  function addMessage(role, text, id = null) {
-    const msgDiv = document.createElement('div');
-    msgDiv.className = 'flex gap-2' + (role === 'user' ? ' justify-end' : '');
+  function addWAMessage(role, text) {
+    const msg = document.createElement('div');
+    msg.className = `bubble-wa bubble-${role}`;
 
-    msgDiv.innerHTML = role === 'ai' ? `
-      <div class="w-8 h-8 rounded-full gradient-saffron flex items-center justify-center text-xs shrink-0">AI</div>
-      <div ${id ? `id="${id}"` : ''} class="bg-white p-3 rounded-2xl rounded-tl-none shadow-sm text-sm text-slate-700 whitespace-pre-wrap">
-        ${text}
-      </div>
-    ` : `
-      <div class="bg-navy text-white p-3 rounded-2xl rounded-tr-none shadow-sm text-sm whitespace-pre-wrap max-w-[80%]">
-        ${text}
+    const time = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+
+    msg.innerHTML = `
+      <div>${text.replace(/\n/g, '<br>')}</div>
+      <div class="flex items-center justify-end gap-1 mt-1">
+        <span class="text-[9px] ${role === 'user' ? 'text-emerald-700' : 'text-slate-400'}">${time}</span>
+        ${role === 'user' ? `
+          <svg viewBox="0 0 24 24" width="12" height="12" fill="currentColor" class="text-emerald-500">
+            <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
+          </svg>
+        ` : ''}
       </div>
     `;
 
-    chatMsgs.appendChild(msgDiv);
+    chatMsgs.appendChild(msg);
     chatMsgs.scrollTop = chatMsgs.scrollHeight;
   }
 }

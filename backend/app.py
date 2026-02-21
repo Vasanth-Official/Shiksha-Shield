@@ -179,7 +179,7 @@ def calculate_risk_score(data):
     Uses expanded features to calculate risk probability.
     data: dict containing all student features
     """
-    model = get_ml_model()
+    # model = get_ml_model() # Placeholder for future ML integration
     
     # Extract common features
     attendance = float(data.get('attendance', 100))
@@ -202,48 +202,48 @@ def calculate_risk_score(data):
     score = 0
     
     # 1. Academic & Attendance (40%)
-    score += (100 - attendance) * 0.25
-    score += (100 - academic_score) * 0.15
+    score += (100 - attendance) * 0.30 # Increased weight
+    score += (100 - academic_score) * 0.20 # Increased weight
     
-    # 2. Financial (20%)
-    income_map = {'high': 0, 'medium': 5, 'low': 15, 'below_poverty': 25}
+    # 2. Financial (25%)
+    income_map = {'high': 0, 'medium': 5, 'low': 15, 'below_poverty': 30} # Increased below_poverty
     score += income_map.get(income_band, 10)
-    if not tuition_up_to_date: score += 15
-    if debtor: score += 10
-    if scholarship: score -= 10 # Scholarship is a protective factor
+    if not tuition_up_to_date: score += 20 # Increased from 15
+    if debtor: score += 15 # Increased from 10
+    if scholarship: score -= 15 # Protective factor increased from 10
     
-    # 3. Social & Health (20%)
-    score += min(menstrual_absence * 5, 20)
-    if marriage_risk_flag: score += 25
-    if migration_flag: score += 15
-    if eve_teasing: score += 10
-    if abuse: score += 20
+    # 3. Social & Health (25%)
+    score += min(menstrual_absence * 6, 25) # Increased
+    if marriage_risk_flag: score += 40 # Significantly increased from 25
+    if migration_flag: score += 20 # Increased from 15
+    if eve_teasing: score += 15 # Increased from 10
+    if abuse: score += 35 # Significantly increased from 20
     
-    # 4. Institutional & Misc (20%)
+    # 4. Institutional & Misc (10%)
     score += min(school_distance * 2, 10)
-    if age_grade_mismatch: score += 10
+    if age_grade_mismatch: score += 15
     
     # Normalize score to 0-100
     score = min(max(round(score, 1), 0), 100)
 
-    # Classification bounds
-    if score <= 30:
+    # Classification bounds - Lower thresholds for earlier intervention
+    if score <= 15: # Lowered from 30
         category = 'Low'
-    elif score <= 50:
+    elif score <= 40: # Lowered from 50
         category = 'Moderate'
-    elif score <= 75:
+    elif score <= 70: # Lowered from 75
         category = 'High'
     else:
         category = 'Critical'
 
     # Determine primary cause
     factors = {
-        'Low Attendance': (100 - attendance) * 0.25,
-        'Poor Academics': (100 - academic_score) * 0.15,
-        'Financial Hardship': income_map.get(income_band, 10) + (15 if not tuition_up_to_date else 0) + (10 if debtor else 0),
-        'Social/Safety Risks': (25 if marriage_risk_flag else 0) + (10 if eve_teasing else 0) + (20 if abuse else 0),
-        'Health/Menstrual Issues': min(menstrual_absence * 5, 20),
-        'Migration Risk': migration_flag * 15
+        'Low Attendance': (100 - attendance) * 0.30,
+        'Poor Academics': (100 - academic_score) * 0.20,
+        'Financial Hardship': income_map.get(income_band, 10) + (20 if not tuition_up_to_date else 0) + (15 if debtor else 0),
+        'Social/Safety Risks': (40 if marriage_risk_flag else 0) + (15 if eve_teasing else 0) + (35 if abuse else 0),
+        'Health/Menstrual Issues': min(menstrual_absence * 6, 25),
+        'Migration Risk': migration_flag * 20
     }
     sorted_factors = sorted(factors.items(), key=lambda x: x[1], reverse=True)
     primary_cause = sorted_factors[0][0]
@@ -676,12 +676,50 @@ def complete_intervention(intervention_id):
     if not intervention:
         return jsonify({'error': 'Not found'}), 404
 
-    student = db.execute('SELECT risk_score FROM students WHERE id=?',
-                        (intervention['student_id'],)).fetchone()
+    student_id = intervention['student_id']
+    cause = intervention['cause_type']
+    action = intervention['action_taken'].lower()
+    
+    # 1. Apply real changes to student metadata based on action
+    # This simulates the "closing" or "resolving" of a risk factor
+    if cause == 'Financial Hardship':
+        if 'scholarship' in action or 'grant' in action:
+            db.execute('UPDATE students SET scholarship_holder=1, tuition_fees_up_to_date=1, debtor=0 WHERE id=?', (student_id,))
+        elif 'fee' in action or 'waived' in action:
+            db.execute('UPDATE students SET tuition_fees_up_to_date=1, debtor=0 WHERE id=?', (student_id,))
+    elif cause == 'Social/Safety Risks':
+        if 'counseling' in action or 'legal' in action:
+            db.execute('UPDATE students SET marriage_risk_flag=0, abuse=0, eve_teasing=0 WHERE id=?', (student_id,))
+    elif cause == 'Health/Menstrual Issues':
+        if 'kit' in action or 'clinic' in action:
+            db.execute('UPDATE students SET menstrual_absence=MAX(0, menstrual_absence-2) WHERE id=?', (student_id,))
+    elif cause == 'Low Attendance':
+        if 'home visit' in action or 'parent' in action:
+            db.execute('UPDATE students SET attendance=MIN(100, attendance+10) WHERE id=?', (student_id,))
+    elif cause == 'Poor Academics':
+        if 'tutor' in action or 'extra class' in action:
+            db.execute('UPDATE students SET academic_score=MIN(100, academic_score+15) WHERE id=?', (student_id,))
+
+    # 2. Recalculate Risk Score after metadata changes
+    student_data = db.execute('SELECT * FROM students WHERE id=?', (student_id,)).fetchone()
+    if student_data:
+        new_risk = calculate_risk_score(dict(student_data))
+        db.execute('''UPDATE students 
+                      SET risk_score=?, risk_category=?, cause=?, last_updated=CURRENT_TIMESTAMP 
+                      WHERE id=?''', 
+                   (new_risk['risk_score'], new_risk['risk_category'], new_risk['cause'], student_id))
+    
+    # 3. Mark intervention as completed and record final score
+    final_score = new_risk['risk_score'] if student_data else (intervention['risk_score_before'] - 10)
     db.execute('UPDATE interventions SET follow_up_status=?, risk_score_after=? WHERE id=?',
-              ('completed', student['risk_score'] if student else 0, intervention_id))
+              ('completed', final_score, intervention_id))
+    
     db.commit()
-    return jsonify({'success': True})
+    return jsonify({
+        'success': True, 
+        'new_risk_score': final_score,
+        'improvement': round(intervention['risk_score_before'] - final_score, 1)
+    })
 
 
 @app.route('/api/interventions/suggestions/<cause>', methods=['GET'])

@@ -246,7 +246,7 @@ function renderStudentRows(students) {
       <td class="text-center">${s.academic_score}</td>
       <td class="text-center"><span class="font-bold">${s.risk_score}</span></td>
       <td>${riskBadge(s.risk_category)}</td>
-      <td class="text-sm">${s.risk_category === 'Low' ? '<span class="text-slate-300">—</span>' : s.cause}</td>
+      <td class="text-sm">${s.cause}</td>
       <td>
         <div class="flex gap-1 justify-center">
           <button class="btn-outline py-1.5 px-2.5 text-xs view-btn" data-id="${s.id}" title="View Details">
@@ -354,13 +354,15 @@ async function showInterventionModal(studentId, cause, name, riskCategory) {
   const overlay = document.createElement('div');
   overlay.className = 'modal-overlay';
   overlay.innerHTML = `
-    <div class="modal-content p-6">
+    <div class="modal-content p-6 max-w-2xl">
       <div class="flex items-center justify-between mb-4">
-        <h3 class="font-bold text-lg text-slate-800">🎯 Intervention Suggestions</h3>
+        <h3 class="font-bold text-lg text-slate-800">🎯 Intervention Management</h3>
         <button class="close-modal p-1 rounded hover:bg-slate-100 text-slate-400 hover:text-slate-600 text-lg">✕</button>
       </div>
-      <div id="interventionContent" class="text-center py-8">
-        <div class="w-8 h-8 border-3 border-saffron border-t-transparent rounded-full animate-spin mx-auto"></div>
+      <div id="interventionContent" class="space-y-6">
+        <div class="flex items-center justify-center py-10">
+          <div class="w-8 h-8 border-3 border-saffron border-t-transparent rounded-full animate-spin"></div>
+        </div>
       </div>
     </div>
   `;
@@ -368,62 +370,116 @@ async function showInterventionModal(studentId, cause, name, riskCategory) {
   overlay.querySelector('.close-modal').addEventListener('click', () => overlay.remove());
   overlay.addEventListener('click', (e) => { if (e.target === overlay) overlay.remove(); });
 
-  try {
-    const suggestions = await api(`/interventions/suggestions/${encodeURIComponent(cause)}`);
+  async function loadData() {
+    try {
+      const [suggestions, existing] = await Promise.all([
+        api(`/interventions/suggestions/${encodeURIComponent(cause)}`),
+        api(`/interventions?student_id=${studentId}`)
+      ]);
 
-    document.getElementById('interventionContent').innerHTML = `
-      <div class="text-left space-y-5">
-        <div class="p-3 bg-slate-50 rounded-lg">
-          <span class="text-sm text-slate-500">Student:</span>
-          <span class="font-semibold text-slate-800 ml-2">${name}</span>
+      const pending = existing.filter(i => i.follow_up_status === 'pending');
+      const completed = existing.filter(i => i.follow_up_status === 'completed');
+
+      document.getElementById('interventionContent').innerHTML = `
+        <div class="p-3 bg-slate-50 rounded-lg flex items-center justify-between">
+          <div>
+            <span class="text-xs text-slate-500 uppercase font-bold tracking-wider">Student:</span>
+            <span class="font-semibold text-slate-800 ml-2">${name}</span>
+          </div>
           ${riskCategory !== 'Low' ? `
-            <span class="ml-3 text-sm text-slate-500">Cause:</span>
-            <span class="font-semibold text-saffron ml-2">${cause}</span>
+            <div>
+              <span class="text-xs text-slate-500 uppercase font-bold tracking-wider">Primary Cause:</span>
+              <span class="font-semibold text-saffron ml-2">${cause}</span>
+            </div>
           ` : ''}
         </div>
 
-        <div>
-          <p class="font-semibold text-slate-700 text-sm mb-2">📋 Recommended Schemes</p>
-          <div class="space-y-2">
-            ${(suggestions.schemes || []).map(s => `
-              <div class="flex items-start gap-2 p-2 bg-emerald-50 rounded-lg">
-                <span class="text-emerald-500 mt-0.5">✓</span>
-                <span class="text-sm text-emerald-800">${s}</span>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <!-- Recommendations Column -->
+          <div class="space-y-4">
+            <div>
+              <p class="font-bold text-slate-700 text-sm mb-3">🛠️ Recommended Actions</p>
+              <div class="space-y-2">
+                ${(suggestions.actions || []).map(a => {
+        const isTaken = pending.some(i => i.action_taken === a);
+        return `
+                    <div class="flex items-center justify-between p-2.5 bg-blue-50 rounded-lg border border-blue-100">
+                      <span class="text-xs font-medium text-blue-900">${a}</span>
+                      <button class="mark-intervention btn-primary py-1 px-3 text-[10px] ${isTaken ? 'opacity-50 cursor-not-allowed grayscale' : ''}" 
+                        data-action="${a}" ${isTaken ? 'disabled' : ''}>
+                        ${isTaken ? 'Recorded' : 'Take Action'}
+                      </button>
+                    </div>
+                  `;
+      }).join('')}
               </div>
-            `).join('')}
-          </div>
-        </div>
-
-        <div>
-          <p class="font-semibold text-slate-700 text-sm mb-2">🎯 Recommended Actions</p>
-          <div class="space-y-2">
-            ${(suggestions.actions || []).map(a => `
-              <div class="flex items-center justify-between p-2 bg-blue-50 rounded-lg">
-                <span class="text-sm text-blue-800">${a}</span>
-                <button class="mark-intervention btn-primary py-1 px-3 text-xs" data-action="${a}">Mark Taken</button>
+            </div>
+            
+            ${suggestions.schemes?.length ? `
+              <div>
+                <p class="font-bold text-slate-700 text-sm mb-3">📋 Relevant Schemes</p>
+                <div class="space-y-2">
+                  ${suggestions.schemes.map(s => `
+                    <div class="p-2 bg-emerald-50 rounded-lg border border-emerald-100 flex items-start gap-2">
+                      <span class="text-emerald-500 text-xs mt-0.5">✓</span>
+                      <span class="text-[11px] text-emerald-800">${s}</span>
+                    </div>
+                  `).join('')}
+                </div>
               </div>
-            `).join('')}
+            ` : ''}
+          </div>
+
+          <!-- History Column -->
+          <div class="space-y-4">
+            <div>
+              <p class="font-bold text-slate-700 text-sm mb-3">🕒 Active Trackers (${pending.length})</p>
+              <div class="space-y-2">
+                ${pending.length === 0 ? '<p class="text-xs text-slate-400 italic p-4 text-center border-2 border-dashed border-slate-100 rounded-xl">No active interventions</p>' :
+          pending.map(i => `
+                    <div class="p-3 bg-white border border-slate-200 rounded-xl shadow-sm">
+                      <div class="flex justify-between items-start mb-2">
+                        <p class="text-xs font-bold text-slate-800">${i.action_taken}</p>
+                        <span class="px-1.5 py-0.5 bg-amber-100 text-amber-700 text-[9px] font-bold rounded uppercase">Pending</span>
+                      </div>
+                      <p class="text-[10px] text-slate-500 mb-2">Started: ${new Date(i.date).toLocaleDateString()}</p>
+                      <button class="complete-btn w-full py-1.5 bg-slate-800 text-white rounded-lg text-[10px] font-bold hover:bg-black transition-colors" data-id="${i.id}">
+                        Mark Completed
+                      </button>
+                    </div>
+                  `).join('')
+        }
+              </div>
+            </div>
+
+            ${completed.length > 0 ? `
+              <div>
+                <p class="font-bold text-slate-700 text-sm mb-3">✅ Recently Completed</p>
+                <div class="space-y-2">
+                  ${completed.slice(0, 3).map(i => `
+                    <div class="p-2 bg-slate-50 rounded-lg border border-slate-100 flex items-center justify-between">
+                      <span class="text-[11px] font-medium text-slate-600">${i.action_taken}</span>
+                      <span class="text-[9px] text-emerald-600 font-bold">REDUCED RISK</span>
+                    </div>
+                  `).join('')}
+                </div>
+              </div>
+            ` : ''}
           </div>
         </div>
+      `;
 
-        ${suggestions.legal ? `
-          <div class="p-3 bg-red-50 border border-red-200 rounded-lg">
-            <p class="font-semibold text-red-700 text-sm mb-1">⚖️ Legal Reference</p>
-            <p class="text-xs text-red-600">${suggestions.legal}</p>
-          </div>
-        ` : ''}
+      attachModalListeners();
+    } catch (err) {
+      document.getElementById('interventionContent').innerHTML = `<p class="text-red-500 text-center py-10">Error loading data: ${err.message}</p>`;
+    }
+  }
 
-        <div class="p-3 bg-slate-50 rounded-lg">
-          <p class="text-xs text-slate-500">📞 Contact: ${suggestions.contacts || 'N/A'}</p>
-        </div>
-
-        <div id="interventionStatus"></div>
-      </div>
-    `;
-
-    // Mark intervention handlers
+  function attachModalListeners() {
+    // Take new action
     overlay.querySelectorAll('.mark-intervention').forEach(btn => {
       btn.addEventListener('click', async () => {
+        const action = btn.dataset.action;
         btn.disabled = true;
         btn.textContent = 'Saving...';
         try {
@@ -432,26 +488,42 @@ async function showInterventionModal(studentId, cause, name, riskCategory) {
             body: {
               student_id: parseInt(studentId),
               cause_type: cause,
-              action_taken: btn.dataset.action,
+              action_taken: action,
               officer_id: getState().user?.id || 1
             }
           });
-          btn.textContent = '✓ Recorded';
-          btn.classList.remove('btn-primary');
-          btn.classList.add('bg-emerald-500', 'text-white', 'cursor-default');
-          document.getElementById('interventionStatus').innerHTML = `
-            <div class="p-3 bg-emerald-50 border border-emerald-200 rounded-lg text-sm text-emerald-700">
-              ✅ Intervention recorded successfully. Follow-up status: Pending.
-            </div>
-          `;
+          loadData(); // Refresh view
         } catch (err) {
           btn.textContent = 'Error';
+          btn.disabled = false;
         }
       });
     });
-  } catch (err) {
-    document.getElementById('interventionContent').innerHTML = '<p class="text-red-500">Failed to load suggestions</p>';
+
+    // Complete action
+    overlay.querySelectorAll('.complete-btn').forEach(btn => {
+      btn.addEventListener('click', async () => {
+        const id = btn.dataset.id;
+        btn.disabled = true;
+        btn.textContent = 'Updating...';
+        try {
+          await api(`/interventions/${id}/complete`, { method: 'PUT' });
+          loadData(); // Refresh list
+          // Trigger global refresh to update stats cards and main table
+          const overviewBtn = document.querySelector('[data-nav="overview"]');
+          if (overviewBtn) {
+            // Briefly show success notification if needed
+            console.log("Intervention complete, refreshing dashboard...");
+          }
+        } catch (err) {
+          btn.textContent = 'Error';
+          btn.disabled = false;
+        }
+      });
+    });
   }
+
+  loadData();
 }
 
 function renderAddForm(content, user) {
